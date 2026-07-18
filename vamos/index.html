@@ -58,8 +58,8 @@
     if (!key) {
       key = (window.prompt(
         "KI-Funktion: API-Key eingeben.\n\n" +
-        "\u2022 Google Gemini (AIza...): GRATIS-Kontingent, Key auf aistudio.google.com\n" +
-        "\u2022 Anthropic (sk-ant-...): bezahlt, Key auf console.anthropic.com\n\n" +
+        "\u2022 Google Gemini: GRATIS-Kontingent, Key auf aistudio.google.com\n" +
+        "\u2022 Anthropic (beginnt mit sk-ant-...): bezahlt, console.anthropic.com\n\n" +
         "Der Key wird nur lokal auf diesem Geraet gespeichert:"
       ) || "").trim();
       if (key) localStorage.setItem("anthropic_key", key);
@@ -87,9 +87,8 @@
     function tryModel(i) {
       if (i >= models.length) return Promise.reject(new Error("Gemini: kein Modell erreichbar"));
       return _fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/" + models[i] +
-        ":generateContent?key=" + encodeURIComponent(key),
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(gbody) }
+        "https://generativelanguage.googleapis.com/v1beta/models/" + models[i] + ":generateContent",
+        { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(gbody) }
       ).then(function (res) {
         if (res.status === 404) return tryModel(i + 1);
         clearOnAuthFail(res);
@@ -112,7 +111,7 @@
       var u = typeof url === "string" ? url : (url && url.url) || "";
       if (u.indexOf("https://api.anthropic.com") === 0) {
         var key = getKey();
-        if (key.indexOf("AIza") === 0) return geminiBridge(key, opts);
+        if (key && key.indexOf("sk-ant-") !== 0) return geminiBridge(key, opts);
         opts = opts || {};
         var h = new Headers(opts.headers || {});
         if (key) h.set("x-api-key", key);
