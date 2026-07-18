@@ -1,1 +1,2 @@
-These are apps i use daily ;)
+These are apps I vibe coded;)
+OKOK
