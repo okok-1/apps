@@ -1,2 +1,2 @@
-These are apps I vibe coded;)
-OKOK
+These are apps I vibe coded ;)
+OkOk
