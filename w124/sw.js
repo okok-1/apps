@@ -1,5 +1,5 @@
 /* W124 Scheckheft – Service Worker: App läuft komplett offline */
-const CACHE = "w124-v2";
+const CACHE = "w124-v4";
 const ASSETS = [
   "./",
   "./index.html",
