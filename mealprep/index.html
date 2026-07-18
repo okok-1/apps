@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meal-Prep-Planer</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MealPrep">
+<meta name="theme-color" content="#254A33">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#2F5D3E; --green-deep:#254A33; --green-tint:#E3EDE6;
+  --cream:#FAF8F2; --line:#E5E1D5; --ink:#20261F; --soft:#66705F;
+  --amber:#B7791F;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--cream);color:var(--ink);min-height:100vh;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom))}
+header{background:var(--green-deep);color:#fff;
+  padding:calc(1rem + env(safe-area-inset-top)) 1.25rem 1rem}
+header h1{font-size:1.2rem;font-weight:700}
+header p{font-family:var(--mono);font-size:.7rem;color:#B8CDBE;letter-spacing:.1em;text-transform:uppercase;margin-top:.15rem}
+nav{display:flex;background:var(--green);position:sticky;top:0;z-index:5}
+nav button{flex:1;background:none;border:none;color:#CBDCCF;padding:.7rem .3rem;
+  font-family:var(--sans);font-size:.82rem;font-weight:600;cursor:pointer;
+  border-bottom:3px solid transparent}
+nav button.active{color:#fff;border-bottom-color:#fff}
+main{padding:1rem 1.25rem}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:.85rem;margin-bottom:.6rem}
+.day-row{display:flex;align-items:center;gap:.7rem}
+.day-name{font-family:var(--mono);font-weight:600;font-size:.8rem;width:2.2rem;color:var(--green-deep)}
+.day-row select{flex:1}
+.day-macros{font-family:var(--mono);font-size:.68rem;color:var(--soft);white-space:nowrap}
+select,input,textarea{font-family:var(--sans);font-size:1rem;color:var(--ink);
+  border:1px solid var(--line);border-radius:7px;padding:.5rem .55rem;background:var(--cream);width:100%}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+textarea{resize:vertical;min-height:4.5rem;font-size:.92rem}
+.section-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--soft);margin:1.2rem 0 .5rem;display:flex;align-items:center;gap:.6rem}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line)}
+.macro-summary{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.8rem}
+.macro-box{background:var(--green-tint);border-radius:10px;padding:.7rem;text-align:center}
+.macro-box b{font-family:var(--mono);font-size:1rem;color:var(--green-deep);display:block}
+.macro-box span{font-size:.66rem;color:var(--soft);text-transform:uppercase;letter-spacing:.08em}
+.batch-item{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;padding:.5rem 0;border-bottom:1px dashed var(--line)}
+.batch-item:last-child{border-bottom:none}
+.batch-name{font-weight:600;font-size:.95rem}
+.batch-info{font-family:var(--mono);font-size:.75rem;color:var(--soft);text-align:right}
+.meal-card h3{font-size:1rem;margin-bottom:.1rem}
+.meal-meta{font-family:var(--mono);font-size:.72rem;color:var(--soft)}
+.meal-actions{display:flex;gap:.9rem;margin-top:.45rem}
+.meal-actions button{background:none;border:none;font-size:.74rem;color:var(--soft);cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px;padding:0}
+.meal-actions button.del{color:#9A3B2E}
+form.meal-form{display:grid;gap:.6rem;grid-template-columns:1fr 1fr}
+form.meal-form label,.card>label{display:flex;flex-direction:column;gap:.25rem;font-size:.72rem;color:var(--soft);font-weight:500}
+.card>label{margin-bottom:.6rem}
+form.meal-form label.wide{grid-column:1/-1}
+button.primary{grid-column:1/-1;background:var(--green-deep);color:#fff;border:none;border-radius:8px;
+  padding:.75rem;font-weight:600;font-size:.95rem;cursor:pointer;font-family:var(--sans)}
+button.ghost{background:none;border:1px solid var(--line);border-radius:8px;
+  padding:.7rem .9rem;font-size:.85rem;color:var(--soft);cursor:pointer;flex:1}
+.shop-group h3{font-size:.85rem;color:var(--green-deep);margin:.8rem 0 .3rem}
+.shop-item{display:flex;align-items:center;gap:.6rem;padding:.42rem 0;border-bottom:1px dashed var(--line)}
+.shop-item input[type=checkbox]{width:1.25rem;height:1.25rem;accent-color:var(--green);flex:none}
+.shop-item span{font-size:.92rem}
+.shop-item.done span{text-decoration:line-through;color:var(--soft)}
+.empty{padding:1.4rem 1rem;text-align:center;border:1.5px dashed var(--line);border-radius:10px;
+  color:var(--soft);font-size:.88rem;line-height:1.5}
+.backup-row{display:flex;gap:.6rem;margin-top:1.4rem}
+.hint{font-size:.7rem;color:var(--soft);text-align:center;margin-top:.6rem;line-height:1.5}
+#toast{position:fixed;left:50%;bottom:calc(1.4rem + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+  background:var(--ink);color:#fff;font-size:.82rem;padding:.55rem .95rem;border-radius:99px;
+  transition:all .25s ease;max-width:85vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(min-width:640px){body{max-width:640px;margin:0 auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Meal-Prep-Planer</h1>
+  <p>Sonntag kochen · Montag–Freitag essen</p>
+</header>
+<nav>
+  <button data-tab="plan" class="active">Wochenplan</button>
+  <button data-tab="meals">Gerichte</button>
+  <button data-tab="shop">Einkauf</button>
+</nav>
+<main>
+  <section id="tab-plan"></section>
+  <section id="tab-meals" hidden></section>
+  <section id="tab-shop" hidden></section>
+</main>
+<div id="toast" role="status"></div>
+<script>
+"use strict";
+const KEY="mealprep_v1";
+const DAYS=[["mo","Mo"],["di","Di"],["mi","Mi"],["do","Do"],["fr","Fr"]];
+let S=load();
+let editMealId=null;
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}
+  return {meals:[],week:{mo:"",di:"",mi:"",do:"",fr:""},checked:{}};
+}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Speichern fehlgeschlagen")}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function mealById(id){return S.meals.find(m=>m.id===id)}
+async function askClaude(apiKey,system,user){
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,
+      "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system,
+      messages:[{role:"user",content:user}]})});
+  if(!res.ok)throw new Error("API-Fehler "+res.status);
+  const d=await res.json();
+  return (d.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n");
+}
+
+/* ---- Batches: wie oft muss jedes Gericht gekocht werden ---- */
+function batchPlan(){
+  const count={};
+  for(const [k] of DAYS){const id=S.week[k];if(id&&mealById(id))count[id]=(count[id]||0)+1}
+  return Object.entries(count).map(([id,days])=>{
+    const m=mealById(id);
+    const batches=Math.max(1,Math.ceil(days/(m.portions||1)));
+    return {meal:m,days,batches};
+  });
+}
+
+/* ---- Tab: Wochenplan ---- */
+function renderPlan(){
+  const opts=id=>`<option value="">– kein Gericht –</option>`+
+    S.meals.map(m=>`<option value="${m.id}"${m.id===id?" selected":""}>${esc(m.name)}</option>`).join("");
+  let kcal=0,prot=0,daysWithMeal=0;
+  const rows=DAYS.map(([k,label])=>{
+    const m=mealById(S.week[k]);
+    let macros="";
+    if(m){daysWithMeal++;kcal+=(+m.kcal||0);prot+=(+m.protein||0);
+      if(m.kcal||m.protein)macros=`${m.kcal?m.kcal+" kcal":""}${m.kcal&&m.protein?" · ":""}${m.protein?m.protein+" g P":""}`}
+    return `<div class="card day-row">
+      <span class="day-name">${label}</span>
+      <select data-day="${k}">${opts(S.week[k])}</select>
+      <span class="day-macros">${macros}</span></div>`;
+  }).join("");
+
+  const batches=batchPlan();
+  const batchHtml=batches.length?batches.map(b=>`
+    <div class="batch-item">
+      <span class="batch-name">${esc(b.meal.name)}</span>
+      <span class="batch-info">${b.days}× diese Woche<br>${b.batches}× kochen (${b.meal.portions} Port./Batch)</span>
+    </div>`).join(""):`<div class="empty">Noch nichts geplant.<br>Oben Gerichte den Tagen zuordnen.</div>`;
+
+  document.getElementById("tab-plan").innerHTML=`
+    ${rows}
+    ${daysWithMeal?`<div class="macro-summary">
+      <div class="macro-box"><b>${kcal?Math.round(kcal/daysWithMeal)+" kcal":"–"}</b><span>Ø Mittag/Tag</span></div>
+      <div class="macro-box"><b>${prot?Math.round(prot/daysWithMeal)+" g":"–"}</b><span>Ø Protein Mittag</span></div>
+    </div>`:""}
+    <div class="section-label">Sonntags-Kochplan</div>
+    <div class="card">${batchHtml}</div>`;
+  document.querySelectorAll("[data-day]").forEach(sel=>sel.addEventListener("change",()=>{
+    S.week[sel.dataset.day]=sel.value;persist();renderPlan();renderShop();
+  }));
+}
+
+/* ---- Tab: Gerichte ---- */
+function renderMeals(){
+  const m=editMealId?mealById(editMealId):null;
+  const list=S.meals.length?S.meals.map(x=>`
+    <div class="card meal-card">
+      <h3>${esc(x.name)}</h3>
+      <div class="meal-meta">${x.portions} Portionen/Batch${x.kcal?` · ${x.kcal} kcal/Port.`:""}${x.protein?` · ${x.protein} g Protein/Port.`:""}</div>
+      <div class="meal-actions">
+        <button data-edit="${x.id}">Bearbeiten</button>
+        <button class="del" data-del="${x.id}">Löschen</button>
+      </div>
+    </div>`).join(""):`<div class="empty">Noch keine Gerichte.<br>Unten das erste anlegen – z. B. dein Standard-Reis-Hähnchen-Batch.</div>`;
+
+  document.getElementById("tab-meals").innerHTML=`
+    ${list}
+    <div class="section-label">KI-Vorschlag</div>
+    <div class="card">
+      <label>Anthropic API-Key (bleibt nur auf diesem Gerät)
+        <input id="ai-key" type="password" value="${esc(localStorage.getItem("anthropic_key")||"")}" placeholder="sk-ant-…"></label>
+      <label>Was für ein Gericht soll es sein?
+        <input id="ai-pref" placeholder="z. B. proteinreich, günstig, 5 Portionen, ohne Fisch"></label>
+      <button class="primary" type="button" id="ai-btn" style="width:100%">Gericht vorschlagen</button>
+      <p class="hint" style="text-align:left" id="ai-status"></p>
+    </div>
+    <div class="section-label">${m?"Gericht bearbeiten":"Neues Gericht"}</div>
+    <form class="meal-form card" id="meal-form">
+      <label class="wide">Name
+        <input id="m-name" required value="${m?esc(m.name):""}" placeholder="z. B. Hähnchen mit Reis & Brokkoli"></label>
+      <label>Portionen pro Batch
+        <input id="m-portions" type="text" inputmode="numeric" required value="${m?m.portions:""}" placeholder="z. B. 5"></label>
+      <label>kcal / Portion (optional)
+        <input id="m-kcal" type="text" inputmode="numeric" value="${m&&m.kcal?m.kcal:""}" placeholder="z. B. 650"></label>
+      <label>Protein g / Portion (optional)
+        <input id="m-protein" type="text" inputmode="numeric" value="${m&&m.protein?m.protein:""}" placeholder="z. B. 45"></label>
+      <label class="wide">Zutaten pro Batch (eine je Zeile, Menge zuerst)
+        <textarea id="m-ing" placeholder="1000 g Hähnchenbrust&#10;500 g Reis&#10;800 g Brokkoli (TK)&#10;2 EL Olivenöl">${m?esc(m.ingredients):""}</textarea></label>
+      <button class="primary" type="submit">${m?"Speichern":"Gericht anlegen"}</button>
+      ${m?`<button type="button" class="ghost" id="m-cancel" style="grid-column:1/-1">Abbrechen</button>`:""}
+    </form>`;
+
+  document.getElementById("meal-form").addEventListener("submit",ev=>{
+    ev.preventDefault();
+    const meal={
+      id:editMealId||uid(),
+      name:document.getElementById("m-name").value.trim(),
+      portions:Math.max(1,parseInt(document.getElementById("m-portions").value,10)||1),
+      kcal:parseInt(document.getElementById("m-kcal").value,10)||0,
+      protein:parseInt(document.getElementById("m-protein").value,10)||0,
+      ingredients:document.getElementById("m-ing").value.trim()
+    };
+    if(!meal.name)return;
+    if(editMealId){S.meals=S.meals.map(x=>x.id===editMealId?meal:x);toast("Gericht aktualisiert")}
+    else{S.meals.push(meal);toast("Gericht angelegt")}
+    editMealId=null;persist();renderMeals();renderPlan();renderShop();
+  });
+  document.getElementById("ai-btn").addEventListener("click",async ev=>{
+    const btn=ev.target;
+    const key=document.getElementById("ai-key").value.trim();
+    const st=document.getElementById("ai-status");
+    if(!key){st.textContent="Bitte zuerst den API-Key eintragen (console.anthropic.com).";return}
+    localStorage.setItem("anthropic_key",key);
+    st.textContent="Denke nach …";btn.disabled=true;
+    try{
+      const txt=await askClaude(key,
+        'Du bist Meal-Prep-Coach für Sonntags-Batch-Cooking (Mo–Fr Mittag mitnehmen). Antworte NUR mit JSON ohne Markdown: {"name":string,"portions":number,"kcal":number,"protein":number,"ingredients":string}. ingredients = eine Zutat je Zeile, Menge zuerst, für den GANZEN Batch, auf Deutsch. kcal/protein pro Portion, realistisch.',
+        "Wunsch: "+(document.getElementById("ai-pref").value.trim()||"proteinreich, günstig, 5 Portionen"));
+      const j=JSON.parse(txt.replace(/```json|```/g,"").trim());
+      document.getElementById("m-name").value=j.name||"";
+      document.getElementById("m-portions").value=j.portions||5;
+      document.getElementById("m-kcal").value=j.kcal||"";
+      document.getElementById("m-protein").value=j.protein||"";
+      document.getElementById("m-ing").value=j.ingredients||"";
+      st.textContent="Vorschlag ins Formular übernommen – prüfen und speichern.";
+    }catch(e){st.textContent="Fehler: "+e.message+" – Key prüfen / später erneut versuchen."}
+    btn.disabled=false;
+  });
+  const c=document.getElementById("m-cancel");
+  if(c)c.addEventListener("click",()=>{editMealId=null;renderMeals()});
+  document.getElementById("tab-meals").querySelectorAll("[data-edit]").forEach(b=>
+    b.addEventListener("click",()=>{editMealId=b.dataset.edit;renderMeals();
+      document.getElementById("meal-form").scrollIntoView({behavior:"smooth"})}));
+  document.getElementById("tab-meals").querySelectorAll("[data-del]").forEach(b=>
+    b.addEventListener("click",()=>{
+      const x=mealById(b.dataset.del);
+      if(x&&confirm(`„${x.name}" löschen?`)){
+        S.meals=S.meals.filter(y=>y.id!==x.id);
+        for(const [k] of DAYS)if(S.week[k]===x.id)S.week[k]="";
+        if(editMealId===x.id)editMealId=null;
+        persist();renderMeals();renderPlan();renderShop();
+      }}));
+}
+
+/* ---- Tab: Einkauf ---- */
+function scaleLine(line,factor){
+  const m=line.match(/^(\d+[.,]?\d*)\s*(.*)$/);
+  if(m&&factor!==1){
+    const n=parseFloat(m[1].replace(",","."))*factor;
+    const nice=Number.isInteger(n)?n:Math.round(n*100)/100;
+    return String(nice).replace(".",",")+" "+m[2];
+  }
+  return factor===1?line:line+` (×${factor})`;
+}
+function renderShop(){
+  const batches=batchPlan();
+  if(!batches.length){
+    document.getElementById("tab-shop").innerHTML=
+      `<div class="empty">Einkaufsliste erscheint, sobald der Wochenplan gefüllt ist.</div>${backupHtml()}`;
+    bindBackup();return;
+  }
+  const groups=batches.map(b=>{
+    const lines=(b.meal.ingredients||"").split("\n").map(s=>s.trim()).filter(Boolean);
+    const items=lines.map((l,i)=>{
+      const key=b.meal.id+"|"+i;
+      const done=!!S.checked[key];
+      return `<div class="shop-item${done?" done":""}">
+        <input type="checkbox" data-check="${key}" ${done?"checked":""} id="c-${key}">
+        <span>${esc(scaleLine(l,b.batches))}</span></div>`;
+    }).join("");
+    return `<div class="shop-group"><h3>${esc(b.meal.name)} (${b.batches}× kochen)</h3>${items||"<div class='hint'>Keine Zutaten hinterlegt</div>"}</div>`;
+  }).join("");
+  document.getElementById("tab-shop").innerHTML=`
+    <div class="card">${groups}</div>
+    <div class="backup-row"><button class="ghost" id="shop-reset">Haken zurücksetzen</button></div>
+    ${backupHtml()}`;
+  document.querySelectorAll("[data-check]").forEach(cb=>cb.addEventListener("change",()=>{
+    S.checked[cb.dataset.check]=cb.checked;persist();renderShop();
+  }));
+  document.getElementById("shop-reset").addEventListener("click",()=>{
+    S.checked={};persist();renderShop();toast("Liste zurückgesetzt");
+  });
+  bindBackup();
+}
+
+/* ---- Backup ---- */
+function backupHtml(){return `
+  <div class="backup-row">
+    <button class="ghost" id="export-btn">Backup exportieren</button>
+    <button class="ghost" id="import-btn">Importieren</button>
+    <input type="file" id="import-file" accept="application/json" hidden>
+  </div>
+  <p class="hint">Daten liegen lokal auf diesem Gerät – gelegentlich exportieren.</p>`}
+function bindBackup(){
+  const e=document.getElementById("export-btn");if(!e)return;
+  e.addEventListener("click",()=>{
+    const blob=new Blob([JSON.stringify({app:"mealprep",version:1,exported:new Date().toISOString(),state:S},null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    a.download=`mealprep-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("import-btn").addEventListener("click",()=>document.getElementById("import-file").click());
+  document.getElementById("import-file").addEventListener("change",ev=>{
+    const f=ev.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=()=>{try{
+      const d=JSON.parse(r.result);
+      if(!d.state||!Array.isArray(d.state.meals))throw new Error();
+      S=d.state;persist();renderAll();toast("Backup importiert");
+    }catch(e){toast("Import fehlgeschlagen")}ev.target.value=""};
+    r.readAsText(f);
+  });
+}
+
+/* ---- Tabs ---- */
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x===b));
+  for(const t of["plan","meals","shop"])document.getElementById("tab-"+t).hidden=t!==b.dataset.tab;
+}));
+
+function renderAll(){renderPlan();renderMeals();renderShop()}
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+renderAll();
+</script>
+</body>
+</html>

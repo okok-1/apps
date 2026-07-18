@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vamos!</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vamos!">
+<meta name="theme-color" content="#1E4B6E">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --azulejo:#1E4B6E; --azulejo-mid:#2D6591; --naranja:#D97E2B; --naranja-deep:#B5651D;
+  --cream:#FBF7EF; --line:#EBE3D3; --ink:#26241E; --soft:#7C7362;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--cream);color:var(--ink);min-height:100vh;
+  display:flex;flex-direction:column}
+@media(min-width:640px){body{max-width:640px;margin:0 auto}}
+header{background:var(--azulejo);color:#fff;padding:calc(1rem + env(safe-area-inset-top)) 1.25rem 1rem;
+  display:flex;align-items:center;gap:.7rem;flex:none}
+header h1{font-size:1.15rem;font-weight:700;flex:1}
+header h1 span{color:var(--naranja)}
+header button{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;
+  padding:.4rem .7rem;font-size:.78rem;cursor:pointer;font-family:var(--sans)}
+main{flex:1;overflow-y:auto;padding:1rem 1.25rem;padding-bottom:1rem}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:.9rem;margin-bottom:.6rem}
+label{display:flex;flex-direction:column;gap:.3rem;font-size:.72rem;color:var(--soft);font-weight:500}
+input{font-family:var(--sans);font-size:1rem;color:var(--ink);
+  border:1px solid var(--line);border-radius:7px;padding:.55rem .6rem;background:var(--cream);width:100%}
+input:focus,button:focus-visible{outline:2px solid var(--naranja);outline-offset:1px}
+.scenario{display:flex;align-items:center;gap:.85rem;cursor:pointer}
+.scenario .badge{width:44px;height:44px;border-radius:10px;background:var(--azulejo);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex:none}
+.scenario b{display:block;font-size:.95rem}
+.scenario span{font-size:.78rem;color:var(--soft);line-height:1.35}
+.hint{font-size:.7rem;color:var(--soft);line-height:1.55;text-align:center;margin-top:.6rem}
+/* Chat */
+.msg{max-width:85%;padding:.6rem .75rem;border-radius:12px;margin-bottom:.5rem;
+  font-size:.92rem;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.msg.ai{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.me{background:var(--azulejo);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.msg .corr{display:block;margin-top:.45rem;padding-top:.4rem;border-top:1px dashed var(--line);
+  font-size:.78rem;color:var(--naranja-deep)}
+.typing{font-family:var(--mono);font-size:.78rem;color:var(--soft);padding:.3rem 0}
+.composer{flex:none;display:flex;gap:.5rem;padding:.7rem 1.25rem calc(.7rem + env(safe-area-inset-bottom));
+  background:var(--cream);border-top:1px solid var(--line)}
+.composer input{flex:1}
+.composer button{background:var(--naranja);border:none;border-radius:8px;color:#fff;
+  font-weight:700;padding:.55rem 1rem;cursor:pointer;font-size:.9rem;font-family:var(--sans)}
+.composer button:disabled{opacity:.5}
+button.primary{width:100%;background:var(--azulejo);color:#fff;border:none;border-radius:8px;
+  padding:.75rem;font-weight:600;font-size:.95rem;cursor:pointer;font-family:var(--sans);margin-top:.5rem}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Vamos<span>!</span></h1>
+  <button id="back-btn" hidden>Szenarien</button>
+  <button id="reset-btn" hidden>Neu starten</button>
+</header>
+<main id="main"></main>
+<div class="composer" id="composer" hidden>
+  <input id="chat-input" placeholder="Auf Spanisch antworten …" autocomplete="off">
+  <button id="send-btn">→</button>
+</div>
+<script>
+"use strict";
+const KEY="vamos_v1";
+const SCENARIOS=[
+ {id:"cafe",icon:"☕",name:"Café con leche",desc:"Im Café in Ruzafa bestellen – Klassiker für den Anfang.",
+  role:"Du bist Camarero/Camarera in einem Café im Viertel Ruzafa in Valencia. Der Gast kommt rein und will bestellen. Eröffne freundlich das Gespräch."},
+ {id:"mercado",icon:"🍊",name:"Mercado Central",desc:"Obst und Gemüse kaufen, Mengen und Preise verhandeln.",
+  role:"Du bist Marktverkäufer/in am Obststand im Mercado Central de Valencia. Der Kunde will einkaufen. Nenne Preise pro Kilo, sei herzlich und ein bisschen geschäftstüchtig."},
+ {id:"piso",icon:"🔑",name:"Buscar piso",desc:"Wohnungsbesichtigung – Fragen zu Miete, Nebenkosten, Lage.",
+  role:"Du bist Vermieter/in und zeigst eine 2-Zimmer-Wohnung in Benimaclet, Valencia. Der Interessent besichtigt sie. Beantworte Fragen zu Miete (800 €), Fianza, Gastos und Lage."},
+ {id:"metro",icon:"🚇",name:"Metro y Cercanías",desc:"Nach dem Weg fragen, Tickets kaufen, Umsteigen verstehen.",
+  role:"Du bist Mitarbeiter/in am Infoschalter der Metrostation Xàtiva in Valencia. Der Reisende braucht Hilfe mit Tickets und Verbindungen (z. B. zum Strand Playa de la Malvarrosa oder zum Flughafen)."},
+ {id:"tasca",icon:"🍷",name:"La Tasca",desc:"Tapas bestellen und Smalltalk an der Bar.",
+  role:"Du bist Barkeeper/in in einer kleinen Tasca im Barrio del Carmen, Valencia. Der Gast bestellt Tapas und ihr kommt ins Plaudern (Woher kommst du? Wie gefällt dir Valencia?)."},
+ {id:"trabajo",icon:"💼",name:"Primer día",desc:"Erster Arbeitstag in einer IT-Firma – Vorstellung und Smalltalk.",
+  role:"Du bist Kollege/Kollegin in einer kleinen IT-Firma in Valencia. Es ist der erste Arbeitstag des Lerners. Begrüße ihn, stelle Fragen (Woher? Was hast du vorher gemacht?), erkläre Kaffeeküche und Gepflogenheiten."}
+];
+let S=load();
+let current=null;
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}
+  return {chats:{}};
+}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function systemFor(sc){
+ return `Du bist Gesprächspartner in einem Spanisch-Lern-Rollenspiel. Szenario: ${sc.role}
+Regeln:
+- Sprich NUR Spanisch in der Rolle, einfaches Niveau (A1–A2), kurze Sätze (2–4 Sätze pro Antwort). Passe dich dem Niveau des Lerners an.
+- Bleib konsequent in der Rolle und im Szenario, treibe das Gespräch natürlich voran (Fragen stellen).
+- Wenn der Lerner Fehler macht: hänge NACH deiner spanischen Antwort eine Zeile an, die mit "KORREKTUR: " beginnt, mit einer kurzen Erklärung auf Deutsch (max. 1–2 Sätze). Keine Fehler = keine Korrekturzeile.
+- Wenn der Lerner auf Deutsch schreibt oder nicht weiterweiß: hilf kurz auf Deutsch in der KORREKTUR-Zeile und gib ihm einen spanischen Beispielsatz.`;
+}
+
+async function askClaude(apiKey,system,messages){
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,
+      "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,system,messages})});
+  if(!res.ok)throw new Error("API-Fehler "+res.status);
+  const d=await res.json();
+  return (d.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n").trim();
+}
+
+/* ---- Szenario-Übersicht ---- */
+function renderMenu(){
+  current=null;
+  document.getElementById("back-btn").hidden=true;
+  document.getElementById("reset-btn").hidden=true;
+  document.getElementById("composer").hidden=true;
+  document.getElementById("title").innerHTML='Vamos<span>!</span>';
+  document.getElementById("main").innerHTML=`
+    <div class="card">
+      <label>Anthropic API-Key (bleibt nur auf diesem Gerät)
+        <input id="api-key" type="password" value="${esc(localStorage.getItem("anthropic_key")||"")}" placeholder="sk-ant-…"></label>
+    </div>
+    ${SCENARIOS.map(sc=>`
+      <div class="card scenario" data-sc="${sc.id}">
+        <div class="badge">${sc.icon}</div>
+        <div><b>${sc.name}</b><span>${sc.desc}${S.chats[sc.id]&&S.chats[sc.id].length?` · ${Math.floor(S.chats[sc.id].length/2)} Runden gespielt`:""}</span></div>
+      </div>`).join("")}
+    <p class="hint">Sechs Situationen aus deinem künftigen Alltag in Valencia.<br>Gespräche werden lokal gespeichert – du kannst jederzeit weitermachen.</p>`;
+  document.getElementById("api-key").addEventListener("change",ev=>
+    localStorage.setItem("anthropic_key",ev.target.value.trim()));
+  document.querySelectorAll("[data-sc]").forEach(el=>el.addEventListener("click",()=>{
+    localStorage.setItem("anthropic_key",document.getElementById("api-key").value.trim());
+    openScenario(el.dataset.sc);
+  }));
+}
+
+/* ---- Chat ---- */
+function openScenario(id){
+  current=SCENARIOS.find(s=>s.id===id);
+  if(!S.chats[id])S.chats[id]=[];
+  document.getElementById("back-btn").hidden=false;
+  document.getElementById("reset-btn").hidden=false;
+  document.getElementById("composer").hidden=false;
+  document.getElementById("title").textContent=current.icon+" "+current.name;
+  renderChat();
+  if(!S.chats[id].length)aiTurn(); /* KI eröffnet das Gespräch */
+}
+function renderChat(typing){
+  const chat=S.chats[current.id];
+  document.getElementById("main").innerHTML=
+    chat.map(m=>{
+      if(m.role==="user")return `<div class="msg me">${esc(m.content)}</div>`;
+      const parts=m.content.split(/\nKORREKTUR: /);
+      return `<div class="msg ai">${esc(parts[0])}${parts[1]?`<span class="corr">✎ ${esc(parts[1])}</span>`:""}</div>`;
+    }).join("")+(typing?`<div class="typing">escribiendo …</div>`:"");
+  const main=document.getElementById("main");
+  main.scrollTop=main.scrollHeight;
+}
+async function aiTurn(){
+  const key=localStorage.getItem("anthropic_key")||"";
+  if(!key){renderChat();document.getElementById("main").innerHTML+=
+    `<div class="card">API-Key fehlt – zurück zu „Szenarien" und oben eintragen.</div>`;return}
+  renderChat(true);
+  document.getElementById("send-btn").disabled=true;
+  try{
+    const chat=S.chats[current.id];
+    const messages=chat.length?chat:[{role:"user",content:"(Der Lerner betritt die Szene. Eröffne das Gespräch.)"}];
+    const reply=await askClaude(key,systemFor(current),messages);
+    chat.push({role:"assistant",content:reply});
+    persist();renderChat();
+  }catch(e){
+    renderChat();
+    document.getElementById("main").innerHTML+=`<div class="card">Fehler: ${esc(e.message)} – nochmal senden.</div>`;
+  }
+  document.getElementById("send-btn").disabled=false;
+}
+function send(){
+  const inp=document.getElementById("chat-input");
+  const txt=inp.value.trim();
+  if(!txt||!current)return;
+  S.chats[current.id].push({role:"user",content:txt});
+  persist();inp.value="";
+  aiTurn();
+}
+document.getElementById("send-btn").addEventListener("click",send);
+document.getElementById("chat-input").addEventListener("keydown",ev=>{if(ev.key==="Enter")send()});
+document.getElementById("back-btn").addEventListener("click",renderMenu);
+document.getElementById("reset-btn").addEventListener("click",()=>{
+  if(current&&confirm("Dieses Gespräch neu starten?")){
+    S.chats[current.id]=[];persist();renderChat();aiTurn();
+  }});
+
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+renderMenu();
+</script>
+</body>
+</html>

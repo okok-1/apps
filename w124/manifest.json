@@ -1,0 +1,17 @@
+{
+  "name": "W124 Scheckheft",
+  "short_name": "Scheckheft",
+  "description": "Digitales Scheckheft für den Mercedes-Benz W124 200D – Wartung, Reparaturen und Kosten.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F2EB",
+  "theme_color": "#22344F",
+  "lang": "de",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

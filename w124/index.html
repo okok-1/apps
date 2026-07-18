@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>W124 Scheckheft</title>
+
+<!-- PWA / iOS App-Modus -->
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Scheckheft">
+<meta name="theme-color" content="#22344F">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+
+<!-- IBM Plex – wird vom Service Worker gecacht, Fallback: Systemfonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --diamantblau:#35507A;
+  --diamantblau-deep:#22344F;
+  --diamantblau-tint:#DFE6F0;
+  --paper:#F4F2EB;
+  --paper-line:#E2DFD4;
+  --ink:#1D2530;
+  --ink-soft:#5A6373;
+  --stamp-red:#9A3B2E;
+  --ok-green:#3D6B4F;
+  --mono:'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --sans:'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom));
+}
+
+/* ---------- Kopf: Fahrzeugidentität ---------- */
+header{
+  background:linear-gradient(175deg, var(--diamantblau-deep) 0%, var(--diamantblau) 100%);
+  color:#fff;
+  padding:calc(1.1rem + env(safe-area-inset-top)) 1.25rem 1.4rem;
+}
+.car-line{
+  display:flex;justify-content:space-between;align-items:baseline;
+  flex-wrap:wrap;gap:.25rem .75rem;
+}
+.car-name{font-weight:700;font-size:1.25rem;letter-spacing:.02em}
+.car-sub{
+  font-family:var(--mono);font-size:.72rem;color:#B9C6DB;
+  text-transform:uppercase;letter-spacing:.12em;
+}
+/* VDO-Kilometerzähler */
+.odo-wrap{margin-top:1rem;display:flex;align-items:center;gap:.9rem}
+.odo{
+  display:flex;gap:2px;background:#0C1017;padding:5px 6px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.12);
+}
+.odo-digit{
+  font-family:var(--mono);font-weight:600;font-size:1.45rem;line-height:1;
+  color:#F2F0E8;background:linear-gradient(#2A2F38 0%,#14181F 45%,#0B0E13 55%,#1C2129 100%);
+  padding:.32rem .34rem;border-radius:2px;min-width:1.35rem;text-align:center;
+}
+.odo-digit.last{color:#0C1017;background:linear-gradient(#F4F2EB, #D8D4C6)}
+.odo-label{font-family:var(--mono);font-size:.7rem;color:#B9C6DB;letter-spacing:.1em;line-height:1.5}
+
+/* ---------- Kostenübersicht ---------- */
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  margin:1rem 1.25rem 0;border:1px solid var(--paper-line);
+  border-radius:10px;background:#fff;overflow:hidden;
+}
+.stat{padding:.8rem .6rem;text-align:center}
+.stat + .stat{border-left:1px solid var(--paper-line)}
+.stat b{font-family:var(--mono);font-weight:600;font-size:1.02rem;display:block;color:var(--diamantblau-deep)}
+.stat span{font-size:.68rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em}
+.cat-stats{margin:0 1.25rem;padding:.65rem 0 0;display:none;flex-wrap:wrap;gap:.4rem}
+.cat-stats.open{display:flex}
+.cat-chip{
+  font-family:var(--mono);font-size:.72rem;background:var(--diamantblau-tint);
+  color:var(--diamantblau-deep);padding:.28rem .55rem;border-radius:99px;
+}
+.stats-toggle{
+  display:block;margin:.4rem auto 0;background:none;border:none;
+  font-family:var(--mono);font-size:.7rem;color:var(--ink-soft);
+  letter-spacing:.08em;text-transform:uppercase;padding:.3rem .8rem;cursor:pointer;
+}
+
+/* ---------- Eintragsformular ---------- */
+.section-label{
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-soft);margin:1.4rem 1.25rem .5rem;
+  display:flex;align-items:center;gap:.6rem;
+}
+.section-label::after{content:"";flex:1;height:1px;background:var(--paper-line)}
+form{
+  margin:0 1.25rem;background:#fff;border:1px solid var(--paper-line);
+  border-radius:10px;padding:1rem;display:grid;gap:.7rem;
+  grid-template-columns:1fr 1fr;
+}
+label{display:flex;flex-direction:column;gap:.25rem;font-size:.72rem;color:var(--ink-soft);font-weight:500}
+label.wide{grid-column:1 / -1}
+input,select,textarea{
+  font-family:var(--sans);font-size:1rem;color:var(--ink);
+  border:1px solid var(--paper-line);border-radius:7px;
+  padding:.55rem .6rem;background:var(--paper);width:100%;
+}
+input[inputmode],#f-cost{font-family:var(--mono)}
+input:focus,select:focus,textarea:focus,button:focus-visible{
+  outline:2px solid var(--diamantblau);outline-offset:1px;
+}
+textarea{resize:vertical;min-height:2.6rem}
+.btn-row{grid-column:1 / -1;display:flex;gap:.6rem}
+button.primary{
+  flex:1;background:var(--diamantblau-deep);color:#fff;border:none;border-radius:8px;
+  padding:.75rem;font-family:var(--sans);font-weight:600;font-size:.95rem;cursor:pointer;
+}
+button.primary:active{background:var(--diamantblau)}
+button.ghost{
+  background:none;border:1px solid var(--paper-line);border-radius:8px;
+  padding:.75rem .9rem;font-size:.85rem;color:var(--ink-soft);cursor:pointer;
+}
+#edit-hint{
+  grid-column:1 / -1;display:none;font-size:.78rem;color:var(--diamantblau-deep);
+  background:var(--diamantblau-tint);border-radius:6px;padding:.45rem .6rem;
+}
+
+/* ---------- Einträge ---------- */
+.year-group{margin:0 1.25rem}
+.year-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin:1.2rem 0 .4rem;
+}
+.year-head h2{font-size:.95rem;font-weight:700;color:var(--diamantblau-deep)}
+.year-head span{font-family:var(--mono);font-size:.78rem;color:var(--ink-soft)}
+.entry{
+  background:#fff;border:1px solid var(--paper-line);border-radius:10px;
+  padding:.75rem .85rem;margin-bottom:.5rem;
+}
+.entry-top{display:flex;justify-content:space-between;gap:.5rem;align-items:baseline}
+.entry-date{font-family:var(--mono);font-size:.78rem;color:var(--ink-soft)}
+.entry-km{font-family:var(--mono);font-size:.78rem;color:var(--ink-soft)}
+.entry-mid{display:flex;justify-content:space-between;gap:.6rem;align-items:center;margin:.3rem 0 .15rem}
+.entry-cat{
+  font-family:var(--mono);font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;
+  border:1.5px solid var(--diamantblau);color:var(--diamantblau-deep);
+  border-radius:4px;padding:.14rem .4rem;transform:rotate(-1.2deg);
+  white-space:nowrap;
+}
+.entry-cat.tuv{border-color:var(--stamp-red);color:var(--stamp-red)}
+.entry-cost{font-family:var(--mono);font-weight:600;font-size:.95rem;color:var(--diamantblau-deep)}
+.entry-text{font-size:.9rem;line-height:1.4;margin-top:.15rem}
+.entry-actions{display:flex;gap:.9rem;margin-top:.45rem}
+.entry-actions button{
+  background:none;border:none;font-size:.74rem;color:var(--ink-soft);
+  cursor:pointer;padding:.15rem 0;text-decoration:underline;text-underline-offset:2px;
+}
+.entry-actions button.del{color:var(--stamp-red)}
+
+/* ---------- Leer / Backup ---------- */
+.empty{
+  margin:1rem 1.25rem;padding:1.6rem 1rem;text-align:center;
+  border:1.5px dashed var(--paper-line);border-radius:10px;color:var(--ink-soft);
+  font-size:.9rem;line-height:1.5;
+}
+.backup-row{margin:1.6rem 1.25rem 0;display:flex;gap:.6rem}
+.backup-row button{flex:1}
+.hint{
+  margin:.6rem 1.25rem 0;font-size:.72rem;color:var(--ink-soft);
+  text-align:center;line-height:1.5;
+}
+#toast{
+  position:fixed;left:50%;bottom:calc(1.4rem + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+  background:var(--ink);color:#fff;font-size:.82rem;padding:.55rem .95rem;
+  border-radius:99px;transition:all .25s ease;max-width:85vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important}
+}
+@media (min-width:640px){
+  body{max-width:640px;margin:0 auto}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="car-line">
+    <div class="car-name">Mercedes-Benz 200 D</div>
+    <div class="car-sub">W124 · 1989 · Diamantblau 355</div>
+  </div>
+  <div class="odo-wrap">
+    <div class="odo" id="odo" aria-label="Kilometerstand"></div>
+    <div class="odo-label">KM-STAND<br>letzter Eintrag</div>
+  </div>
+</header>
+
+<div class="stats" id="stats"></div>
+<div class="cat-stats" id="cat-stats"></div>
+<button class="stats-toggle" id="stats-toggle" type="button">Kosten je Kategorie ▾</button>
+
+<div class="section-label">Neuer Eintrag</div>
+<form id="entry-form">
+  <div id="edit-hint">Eintrag wird bearbeitet – „Speichern" überschreibt ihn.</div>
+  <label>Datum
+    <input type="date" id="f-date" required>
+  </label>
+  <label>km-Stand
+    <input type="text" inputmode="numeric" id="f-km" placeholder="z. B. 287450" required>
+  </label>
+  <label>Kategorie
+    <select id="f-cat"></select>
+  </label>
+  <label>Kosten (€)
+    <input type="text" inputmode="decimal" id="f-cost" placeholder="z. B. 45,90">
+  </label>
+  <label class="wide">Arbeiten / Teile
+    <textarea id="f-text" placeholder="z. B. Ölwechsel 15W-40, Ölfilter MANN W 719/13" required></textarea>
+  </label>
+  <div class="btn-row">
+    <button type="submit" class="primary" id="save-btn">Eintrag speichern</button>
+    <button type="button" class="ghost" id="cancel-edit" style="display:none">Abbrechen</button>
+  </div>
+</form>
+
+<div class="section-label">Historie</div>
+<div id="list"></div>
+
+<div class="backup-row">
+  <button type="button" class="ghost" id="export-btn">Backup exportieren (JSON)</button>
+  <button type="button" class="ghost" id="import-btn">Importieren</button>
+  <input type="file" id="import-file" accept="application/json" hidden>
+</div>
+<p class="hint">Daten liegen lokal auf diesem Gerät. Regelmäßig exportieren –<br>iOS kann Speicher ungenutzter Web-Apps nach langer Zeit löschen.</p>
+
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+const KEY = "w124_scheckheft_v1";
+const CATEGORIES = ["Ölwechsel","Reparatur","Teile","Verschleiß","TÜV / HU","Pflege","Sonstiges"];
+const eur = new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR"});
+const nf  = new Intl.NumberFormat("de-DE");
+
+let entries = load();
+let editId = null;
+
+function load(){
+  try{ const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : []; }
+  catch(e){ return []; }
+}
+function persist(){
+  try{ localStorage.setItem(KEY, JSON.stringify(entries)); }
+  catch(e){ toast("Speichern fehlgeschlagen – Speicher voll?"); }
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function fmtDate(iso){
+  if(!iso) return "–";
+  const [y,m,d] = iso.split("-");
+  return `${d}.${m}.${y}`;
+}
+function parseCost(s){
+  if(!s) return 0;
+  const n = parseFloat(String(s).replace(/\./g,"").replace(",","."));
+  return isNaN(n) ? 0 : n;
+}
+function parseKm(s){
+  const n = parseInt(String(s).replace(/\D/g,""),10);
+  return isNaN(n) ? 0 : n;
+}
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+/* ---------- Rendern ---------- */
+function maxKm(){ return entries.reduce((m,e)=>Math.max(m,e.km||0),0); }
+function minKm(){ return entries.reduce((m,e)=> e.km>0 ? Math.min(m,e.km) : m, Infinity); }
+
+function renderOdo(){
+  const el = document.getElementById("odo");
+  const km = maxKm();
+  const digits = String(km).padStart(6,"0").slice(-7).split("");
+  el.innerHTML = digits.map((d,i)=>
+    `<span class="odo-digit${i===digits.length-1?" last":""}">${d}</span>`
+  ).join("");
+}
+
+function renderStats(){
+  const total = entries.reduce((s,e)=>s+(e.cost||0),0);
+  const year  = new Date().getFullYear();
+  const yearSum = entries.filter(e=>e.date && e.date.startsWith(String(year)))
+                         .reduce((s,e)=>s+(e.cost||0),0);
+  const span = maxKm() - (minKm()===Infinity ? maxKm() : minKm());
+  const perKm = span > 0 ? total/span : 0;
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><b>${eur.format(total)}</b><span>Gesamt</span></div>
+    <div class="stat"><b>${eur.format(yearSum)}</b><span>${year}</span></div>
+    <div class="stat"><b>${span>0 ? eur.format(perKm)+"/km" : "–"}</b><span>Kosten je km</span></div>`;
+
+  const byCat = {};
+  for(const e of entries){ byCat[e.cat] = (byCat[e.cat]||0) + (e.cost||0); }
+  document.getElementById("cat-stats").innerHTML =
+    Object.entries(byCat).sort((a,b)=>b[1]-a[1])
+      .map(([c,v])=>`<span class="cat-chip">${c} · ${eur.format(v)}</span>`).join("")
+    || `<span class="cat-chip">Noch keine Kosten erfasst</span>`;
+}
+
+function renderList(){
+  const list = document.getElementById("list");
+  if(entries.length === 0){
+    list.innerHTML = `<div class="empty">Noch keine Einträge.<br>
+      Der erste Eintrag legt den km-Stand oben fest –<br>jede Arbeit zählt fürs H-Kennzeichen-Dossier.</div>`;
+    return;
+  }
+  const sorted = [...entries].sort((a,b)=>
+    (b.date||"").localeCompare(a.date||"") || (b.km||0)-(a.km||0));
+  const groups = {};
+  for(const e of sorted){
+    const y = (e.date||"????").slice(0,4);
+    (groups[y] = groups[y] || []).push(e);
+  }
+  list.innerHTML = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(y=>{
+    const sum = groups[y].reduce((s,e)=>s+(e.cost||0),0);
+    return `<div class="year-group">
+      <div class="year-head"><h2>${y}</h2><span>${groups[y].length} Einträge · ${eur.format(sum)}</span></div>
+      ${groups[y].map(e=>`
+        <div class="entry">
+          <div class="entry-top">
+            <span class="entry-date">${fmtDate(e.date)}</span>
+            <span class="entry-km">${e.km ? nf.format(e.km)+" km" : ""}</span>
+          </div>
+          <div class="entry-mid">
+            <span class="entry-cat${e.cat==="TÜV / HU"?" tuv":""}">${e.cat}</span>
+            <span class="entry-cost">${e.cost ? eur.format(e.cost) : ""}</span>
+          </div>
+          <div class="entry-text">${escapeHtml(e.text)}</div>
+          <div class="entry-actions">
+            <button type="button" data-edit="${e.id}">Bearbeiten</button>
+            <button type="button" class="del" data-del="${e.id}">Löschen</button>
+          </div>
+        </div>`).join("")}
+    </div>`;
+  }).join("");
+}
+
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function renderAll(){ renderOdo(); renderStats(); renderList(); }
+
+/* ---------- Formular ---------- */
+const form = document.getElementById("entry-form");
+const fDate = document.getElementById("f-date");
+const fKm   = document.getElementById("f-km");
+const fCat  = document.getElementById("f-cat");
+const fCost = document.getElementById("f-cost");
+const fText = document.getElementById("f-text");
+
+fCat.innerHTML = CATEGORIES.map(c=>`<option>${c}</option>`).join("");
+fDate.value = todayISO();
+
+function resetForm(){
+  form.reset();
+  fDate.value = todayISO();
+  editId = null;
+  document.getElementById("edit-hint").style.display = "none";
+  document.getElementById("cancel-edit").style.display = "none";
+  document.getElementById("save-btn").textContent = "Eintrag speichern";
+}
+
+form.addEventListener("submit", ev=>{
+  ev.preventDefault();
+  const entry = {
+    id:   editId || uid(),
+    date: fDate.value,
+    km:   parseKm(fKm.value),
+    cat:  fCat.value,
+    cost: parseCost(fCost.value),
+    text: fText.value.trim(),
+  };
+  if(!entry.text){ toast("Bitte Arbeiten beschreiben."); return; }
+  if(editId){
+    entries = entries.map(e => e.id===editId ? entry : e);
+    toast("Eintrag aktualisiert.");
+  }else{
+    entries.push(entry);
+    toast("Eintrag gespeichert.");
+  }
+  persist(); resetForm(); renderAll();
+});
+
+document.getElementById("cancel-edit").addEventListener("click", resetForm);
+
+document.getElementById("list").addEventListener("click", ev=>{
+  const editBtn = ev.target.closest("[data-edit]");
+  const delBtn  = ev.target.closest("[data-del]");
+  if(editBtn){
+    const e = entries.find(x=>x.id===editBtn.dataset.edit);
+    if(!e) return;
+    editId = e.id;
+    fDate.value = e.date; fKm.value = e.km||""; fCat.value = e.cat;
+    fCost.value = e.cost ? String(e.cost).replace(".",",") : "";
+    fText.value = e.text;
+    document.getElementById("edit-hint").style.display = "block";
+    document.getElementById("cancel-edit").style.display = "block";
+    document.getElementById("save-btn").textContent = "Speichern";
+    form.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+  if(delBtn){
+    const e = entries.find(x=>x.id===delBtn.dataset.del);
+    if(!e) return;
+    if(confirm(`Eintrag vom ${fmtDate(e.date)} („${e.text.slice(0,40)}…") wirklich löschen?`)){
+      entries = entries.filter(x=>x.id!==e.id);
+      persist(); renderAll(); toast("Eintrag gelöscht.");
+    }
+  }
+});
+
+/* ---------- Statistik-Toggle ---------- */
+document.getElementById("stats-toggle").addEventListener("click", ()=>{
+  const el = document.getElementById("cat-stats");
+  const open = el.classList.toggle("open");
+  document.getElementById("stats-toggle").textContent =
+    open ? "Kosten je Kategorie ▴" : "Kosten je Kategorie ▾";
+});
+
+/* ---------- Backup ---------- */
+document.getElementById("export-btn").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify({app:"w124-scheckheft",version:1,exported:new Date().toISOString(),entries}, null, 2)],
+                        {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `w124-scheckheft-backup-${todayISO()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById("import-btn").addEventListener("click", ()=>
+  document.getElementById("import-file").click());
+
+document.getElementById("import-file").addEventListener("change", ev=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      const imported = Array.isArray(data) ? data : data.entries;
+      if(!Array.isArray(imported)) throw new Error("Format");
+      const ids = new Set(entries.map(e=>e.id));
+      let added = 0;
+      for(const e of imported){
+        if(e && e.id && !ids.has(e.id)){ entries.push(e); ids.add(e.id); added++; }
+      }
+      persist(); renderAll();
+      toast(added ? `${added} Einträge importiert.` : "Keine neuen Einträge gefunden.");
+    }catch(err){
+      toast("Import fehlgeschlagen – keine gültige Backup-Datei.");
+    }
+    ev.target.value = "";
+  };
+  reader.readAsText(file);
+});
+
+/* ---------- Service Worker ---------- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+
+renderAll();
+</script>
+</body>
+</html>

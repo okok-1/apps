@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Abschlussprojekt-Planer</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Projekt">
+<meta name="theme-color" content="#2A2D33">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --graphite:#2A2D33; --graphite-mid:#3C4049; --amber:#A8500F; --amber-tint:#F4E5D8;
+  --paper:#F8F7F4; --line:#E4E2DB; --ink:#22252B; --soft:#6E7178; --red:#9A3B2E; --green:#2F6B47;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom))}
+header{background:var(--graphite);color:#fff;padding:calc(1rem + env(safe-area-inset-top)) 1.25rem 1.1rem}
+header input{background:none;border:none;color:#fff;font-family:var(--sans);font-weight:700;
+  font-size:1.15rem;width:100%;padding:0}
+header input::placeholder{color:#9AA0AB}
+header p{font-family:var(--mono);font-size:.7rem;color:#B9BDC6;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem}
+.budget{margin-top:.9rem}
+.budget-bar{height:16px;border-radius:99px;background:var(--graphite-mid);overflow:hidden;display:flex}
+.budget-bar .used{background:var(--amber);height:100%}
+.budget-bar .over{background:var(--red);height:100%}
+.budget-nums{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.7rem;color:#B9BDC6;margin-top:.35rem}
+main{padding:1rem 1.25rem}
+@media(min-width:640px){body{max-width:640px;margin:0 auto}}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:.9rem;margin-bottom:.6rem}
+.section-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--soft);margin:1.2rem 0 .5rem;display:flex;align-items:center;gap:.6rem}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line)}
+.phase{padding:.55rem 0;border-bottom:1px dashed var(--line)}
+.phase:last-child{border-bottom:none}
+.phase-top{display:flex;justify-content:space-between;gap:.6rem;align-items:baseline}
+.phase-name{font-weight:600;font-size:.92rem}
+.phase-hours{font-family:var(--mono);font-size:.74rem;color:var(--soft);white-space:nowrap}
+.phase-bar{height:8px;border-radius:99px;background:var(--amber-tint);margin-top:.4rem;overflow:hidden}
+.phase-bar div{height:100%;background:var(--amber)}
+.phase-bar div.over{background:var(--red)}
+.phase-edit{display:flex;gap:.5rem;margin-top:.45rem;align-items:center}
+.phase-edit input{width:5.2rem}
+.phase-edit button{background:none;border:none;font-size:.72rem;color:var(--red);cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px}
+label{display:flex;flex-direction:column;gap:.25rem;font-size:.72rem;color:var(--soft);font-weight:500}
+input,select,textarea{font-family:var(--sans);font-size:1rem;color:var(--ink);
+  border:1px solid var(--line);border-radius:7px;padding:.5rem .55rem;background:var(--paper);width:100%}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+form{display:grid;gap:.6rem;grid-template-columns:1fr 1fr}
+form label.wide{grid-column:1/-1}
+button.primary{grid-column:1/-1;background:var(--graphite);color:#fff;border:none;border-radius:8px;
+  padding:.75rem;font-weight:600;font-size:.95rem;cursor:pointer;font-family:var(--sans)}
+button.ghost{background:none;border:1px solid var(--line);border-radius:8px;
+  padding:.7rem .9rem;font-size:.85rem;color:var(--soft);cursor:pointer;flex:1}
+.log-item{display:flex;justify-content:space-between;gap:.6rem;padding:.5rem 0;
+  border-bottom:1px dashed var(--line);font-size:.88rem;align-items:baseline}
+.log-item:last-child{border-bottom:none}
+.log-main span{display:block;font-size:.72rem;color:var(--soft);font-family:var(--mono)}
+.log-right{text-align:right;font-family:var(--mono);font-size:.82rem;white-space:nowrap}
+.log-right button{background:none;border:none;font-size:.7rem;color:var(--red);cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px;display:block;margin-left:auto;margin-top:.15rem}
+.ms{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px dashed var(--line)}
+.ms:last-child{border-bottom:none}
+.ms input[type=checkbox]{width:1.25rem;height:1.25rem;accent-color:var(--amber);flex:none}
+.ms .ms-name{flex:1;font-size:.9rem}
+.ms.done .ms-name{text-decoration:line-through;color:var(--soft)}
+.ms input[type=date]{width:9.2rem;font-size:.85rem;padding:.35rem .4rem}
+.empty{padding:1.2rem 1rem;text-align:center;border:1.5px dashed var(--line);border-radius:10px;
+  color:var(--soft);font-size:.88rem;line-height:1.5}
+.backup-row{display:flex;gap:.6rem;margin-top:1.2rem}
+.hint{font-size:.7rem;color:var(--soft);text-align:center;margin-top:.6rem;line-height:1.5}
+#toast{position:fixed;left:50%;bottom:calc(1.4rem + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+  background:var(--ink);color:#fff;font-size:.82rem;padding:.55rem .95rem;border-radius:99px;
+  transition:all .25s ease;max-width:85vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <input id="p-title" placeholder="Projekttitel eintragen …">
+  <p>IHK-Abschlussprojekt · 40-Stunden-Budget</p>
+  <div class="budget">
+    <div class="budget-bar" id="budget-bar"></div>
+    <div class="budget-nums" id="budget-nums"></div>
+  </div>
+</header>
+<main>
+  <div class="section-label">Phasen · geplant vs. gebucht</div>
+  <div class="card" id="phases"></div>
+  <div class="card">
+    <form id="phase-form" style="grid-template-columns:2fr 1fr">
+      <label>Neue Phase<input id="ph-name" placeholder="z. B. Schulung"></label>
+      <label>Stunden<input id="ph-hours" type="text" inputmode="decimal" placeholder="4"></label>
+      <button class="primary" type="submit">Phase hinzufügen</button>
+    </form>
+  </div>
+
+  <div class="section-label">Zeit buchen</div>
+  <form class="card" id="log-form">
+    <label>Datum<input type="date" id="l-date" required></label>
+    <label>Stunden<input id="l-hours" type="text" inputmode="decimal" required placeholder="z. B. 2,5"></label>
+    <label class="wide">Phase<select id="l-phase"></select></label>
+    <label class="wide">Was wurde gemacht?<input id="l-note" placeholder="kurz & konkret – landet später in der Doku"></label>
+    <button class="primary" type="submit">Buchen</button>
+  </form>
+  <div class="card" id="log"></div>
+
+  <div class="section-label">Meilensteine</div>
+  <div class="card" id="milestones"></div>
+
+  <div class="backup-row">
+    <button class="ghost" id="export-btn">Backup exportieren</button>
+    <button class="ghost" id="import-btn">Importieren</button>
+    <input type="file" id="import-file" accept="application/json" hidden>
+  </div>
+  <p class="hint">Die Buchungsnotizen sind gleichzeitig Rohmaterial für die Projektdokumentation.</p>
+</main>
+<div id="toast" role="status"></div>
+<script>
+"use strict";
+const KEY="approjekt_v1";
+let S=load();
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}
+  return {
+    title:"",
+    phases:[
+      {id:"p1",name:"Ist-Analyse",hours:4},
+      {id:"p2",name:"Soll-Konzept & Planung",hours:8},
+      {id:"p3",name:"Realisierung",hours:16},
+      {id:"p4",name:"Test & Qualitätssicherung",hours:4},
+      {id:"p5",name:"Dokumentation",hours:6},
+      {id:"p6",name:"Übergabe & Abnahme",hours:2}
+    ],
+    log:[],
+    milestones:[
+      {id:"m1",name:"Projektantrag eingereicht",done:false,date:""},
+      {id:"m2",name:"Projektantrag genehmigt",done:false,date:""},
+      {id:"m3",name:"Durchführung abgeschlossen",done:false,date:""},
+      {id:"m4",name:"Dokumentation abgegeben",done:false,date:""},
+      {id:"m5",name:"Präsentation & Fachgespräch",done:false,date:""}
+    ]
+  };
+}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Speichern fehlgeschlagen")}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function num(s){const n=parseFloat(String(s).replace(",","."));return isNaN(n)?0:n}
+function fmtH(n){return String(Math.round(n*100)/100).replace(".",",")}
+function todayISO(){const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function fmtDate(iso){if(!iso)return"–";const[y,m,d]=iso.split("-");return d+"."+m+"."+y}
+function bookedFor(pid){return S.log.filter(l=>l.phase===pid).reduce((s,l)=>s+l.hours,0)}
+function bookedTotal(){return S.log.reduce((s,l)=>s+l.hours,0)}
+function plannedTotal(){return S.phases.reduce((s,p)=>s+p.hours,0)}
+
+function renderBudget(){
+  const used=bookedTotal();
+  const pct=Math.min(100,used/40*100);
+  const over=used>40?Math.min(100-pct,(used-40)/40*100):0;
+  document.getElementById("budget-bar").innerHTML=
+    `<div class="used" style="width:${pct}%"></div>${over?`<div class="over" style="width:${over}%"></div>`:""}`;
+  const planned=plannedTotal();
+  document.getElementById("budget-nums").innerHTML=
+    `<span>${fmtH(used)} h gebucht</span>
+     <span>${planned!==40?`⚠ ${fmtH(planned)} h geplant`:`${fmtH(Math.max(0,40-used))} h frei`}</span>
+     <span>40 h Budget</span>`;
+}
+function renderPhases(){
+  document.getElementById("phases").innerHTML=S.phases.map(p=>{
+    const b=bookedFor(p.id);
+    const pct=p.hours?Math.min(100,b/p.hours*100):0;
+    return `<div class="phase">
+      <div class="phase-top">
+        <span class="phase-name">${esc(p.name)}</span>
+        <span class="phase-hours">${fmtH(b)} / ${fmtH(p.hours)} h</span>
+      </div>
+      <div class="phase-bar"><div class="${b>p.hours?"over":""}" style="width:${b>p.hours?100:pct}%"></div></div>
+      <div class="phase-edit">
+        <input type="text" inputmode="decimal" value="${fmtH(p.hours)}" data-ph-hours="${p.id}" aria-label="geplante Stunden">
+        <span style="font-size:.72rem;color:var(--soft)">h geplant</span>
+        <span style="flex:1"></span>
+        <button data-ph-del="${p.id}">Entfernen</button>
+      </div>
+    </div>`;
+  }).join("");
+  document.querySelectorAll("[data-ph-hours]").forEach(i=>i.addEventListener("change",()=>{
+    const p=S.phases.find(x=>x.id===i.dataset.phHours);
+    if(p){p.hours=num(i.value);persist();renderAll()}
+  }));
+  document.querySelectorAll("[data-ph-del]").forEach(b=>b.addEventListener("click",()=>{
+    const p=S.phases.find(x=>x.id===b.dataset.phDel);
+    if(p&&confirm(`Phase „${p.name}" entfernen? (Buchungen bleiben, verlieren aber die Zuordnung)`)){
+      S.phases=S.phases.filter(x=>x.id!==p.id);persist();renderAll();
+    }
+  }));
+  document.getElementById("l-phase").innerHTML=
+    S.phases.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+}
+function renderLog(){
+  const el=document.getElementById("log");
+  el.innerHTML=S.log.length?[...S.log].sort((a,b)=>b.date.localeCompare(a.date)).map(l=>{
+    const p=S.phases.find(x=>x.id===l.phase);
+    return `<div class="log-item">
+      <div class="log-main">${esc(l.note||"(ohne Notiz)")}<span>${fmtDate(l.date)} · ${p?esc(p.name):"ohne Phase"}</span></div>
+      <div class="log-right">${fmtH(l.hours)} h<button data-del="${l.id}">löschen</button></div>
+    </div>`;
+  }).join(""):`<div class="empty">Noch nichts gebucht.<br>Jede Projektstunde direkt buchen – rückwirkend rekonstruieren ist Selbstbetrug.</div>`;
+  el.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
+    if(confirm("Buchung löschen?")){
+      S.log=S.log.filter(l=>l.id!==b.dataset.del);persist();renderAll();
+    }
+  }));
+}
+function renderMilestones(){
+  document.getElementById("milestones").innerHTML=S.milestones.map(m=>`
+    <div class="ms ${m.done?"done":""}">
+      <input type="checkbox" data-ms="${m.id}" ${m.done?"checked":""}>
+      <span class="ms-name">${esc(m.name)}</span>
+      <input type="date" data-ms-date="${m.id}" value="${m.date}">
+    </div>`).join("");
+  document.querySelectorAll("[data-ms]").forEach(c=>c.addEventListener("change",()=>{
+    const m=S.milestones.find(x=>x.id===c.dataset.ms);
+    if(m){m.done=c.checked;if(c.checked&&!m.date)m.date=todayISO();persist();renderMilestones()}
+  }));
+  document.querySelectorAll("[data-ms-date]").forEach(i=>i.addEventListener("change",()=>{
+    const m=S.milestones.find(x=>x.id===i.dataset.msDate);
+    if(m){m.date=i.value;persist()}
+  }));
+}
+function renderAll(){renderBudget();renderPhases();renderLog();renderMilestones();
+  document.getElementById("p-title").value=S.title}
+
+document.getElementById("p-title").addEventListener("change",ev=>{
+  S.title=ev.target.value.trim();persist()});
+document.getElementById("phase-form").addEventListener("submit",ev=>{
+  ev.preventDefault();
+  const name=document.getElementById("ph-name").value.trim();
+  if(!name)return;
+  S.phases.push({id:uid(),name,hours:num(document.getElementById("ph-hours").value)});
+  persist();document.getElementById("phase-form").reset();renderAll();
+});
+document.getElementById("log-form").addEventListener("submit",ev=>{
+  ev.preventDefault();
+  const hours=num(document.getElementById("l-hours").value);
+  if(hours<=0){toast("Stunden fehlen");return}
+  S.log.push({id:uid(),date:document.getElementById("l-date").value,
+    phase:document.getElementById("l-phase").value,hours,
+    note:document.getElementById("l-note").value.trim()});
+  persist();
+  document.getElementById("l-hours").value="";document.getElementById("l-note").value="";
+  renderAll();toast("Gebucht – "+fmtH(bookedTotal())+" / 40 h");
+});
+document.getElementById("l-date").value=todayISO();
+
+document.getElementById("export-btn").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify({app:"approjekt",version:1,exported:new Date().toISOString(),state:S},null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=`abschlussprojekt-backup-${todayISO()}.json`;a.click();URL.revokeObjectURL(a.href)});
+document.getElementById("import-btn").addEventListener("click",()=>document.getElementById("import-file").click());
+document.getElementById("import-file").addEventListener("change",ev=>{
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{
+    const d=JSON.parse(r.result);
+    if(!d.state||!Array.isArray(d.state.phases))throw new Error();
+    S=d.state;persist();renderAll();toast("Backup importiert");
+  }catch(e){toast("Import fehlgeschlagen")}ev.target.value=""};
+  r.readAsText(f)});
+
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+renderAll();
+</script>
+</body>
+</html>

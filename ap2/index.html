@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AP2-Trainer</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AP2">
+<meta name="theme-color" content="#1F2A3A">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1F2A3A; --navy-mid:#2E415C; --blue:#3E6FA8; --tint:#E4EBF4;
+  --paper:#FAFAF7; --line:#E3E2DA; --ink:#1B222C; --soft:#6A7280;
+  --green:#2F6B47; --red:#9A3B2E;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom))}
+header{background:var(--navy);color:#fff;padding:calc(1rem + env(safe-area-inset-top)) 1.25rem 1rem}
+header h1{font-size:1.2rem;font-weight:700}
+.head-stats{display:flex;gap:1.2rem;margin-top:.6rem;font-family:var(--mono);font-size:.72rem;color:#AEBDD2}
+.head-stats b{color:#fff;font-size:.95rem;display:block}
+nav{display:flex;background:var(--navy-mid);position:sticky;top:0;z-index:5}
+nav button{flex:1;background:none;border:none;color:#B9C6DB;padding:.7rem .3rem;
+  font-family:var(--sans);font-size:.82rem;font-weight:600;cursor:pointer;border-bottom:3px solid transparent}
+nav button.active{color:#fff;border-bottom-color:#fff}
+main{padding:1rem 1.25rem}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:1rem;margin-bottom:.6rem}
+.q-topic{font-family:var(--mono);font-size:.66rem;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--blue);border:1.5px solid var(--blue);border-radius:4px;display:inline-block;
+  padding:.14rem .45rem;margin-bottom:.6rem}
+.q-box{font-family:var(--mono);font-size:.66rem;color:var(--soft);float:right}
+.q-text{font-size:1.02rem;line-height:1.5;font-weight:500;white-space:pre-wrap}
+.opts{margin-top:.9rem;display:grid;gap:.5rem}
+.opts button{background:var(--paper);border:1px solid var(--line);border-radius:8px;
+  padding:.7rem .8rem;font-size:.92rem;text-align:left;cursor:pointer;font-family:var(--sans);line-height:1.4}
+.opts button.correct{border-color:var(--green);background:#E8F2EC}
+.opts button.wrong{border-color:var(--red);background:#F6E9E6}
+.expl{margin-top:.8rem;font-size:.88rem;line-height:1.5;background:var(--tint);
+  border-radius:8px;padding:.7rem;white-space:pre-wrap}
+.self-btns{display:flex;gap:.6rem;margin-top:.9rem}
+.self-btns button,button.primary{flex:1;border:none;border-radius:8px;padding:.8rem;
+  font-family:var(--sans);font-weight:600;font-size:.95rem;cursor:pointer}
+button.primary{background:var(--navy);color:#fff;width:100%}
+.self-btns .yes{background:var(--green);color:#fff}
+.self-btns .no{background:var(--red);color:#fff}
+button.ghost{background:none;border:1px solid var(--line);border-radius:8px;
+  padding:.7rem .9rem;font-size:.85rem;color:var(--soft);cursor:pointer;flex:1}
+.progress-line{font-family:var(--mono);font-size:.72rem;color:var(--soft);margin-bottom:.6rem;text-align:center}
+.done-msg{text-align:center;padding:1.6rem 1rem;line-height:1.6}
+.done-msg b{font-size:1.05rem}
+.boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin-top:.8rem}
+.boxcell{background:var(--tint);border-radius:8px;padding:.55rem .3rem;text-align:center}
+.boxcell b{font-family:var(--mono);display:block;color:var(--navy)}
+.boxcell span{font-size:.62rem;color:var(--soft);text-transform:uppercase;letter-spacing:.06em}
+.section-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--soft);margin:1.2rem 0 .5rem;display:flex;align-items:center;gap:.6rem}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line)}
+label{display:flex;flex-direction:column;gap:.25rem;font-size:.72rem;color:var(--soft);font-weight:500;margin-bottom:.6rem}
+input,select,textarea{font-family:var(--sans);font-size:1rem;color:var(--ink);
+  border:1px solid var(--line);border-radius:7px;padding:.5rem .55rem;background:var(--paper);width:100%}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+textarea{resize:vertical;min-height:3.2rem;font-size:.92rem}
+.qlist-item{padding:.6rem 0;border-bottom:1px dashed var(--line);font-size:.88rem}
+.qlist-item:last-child{border-bottom:none}
+.qlist-meta{font-family:var(--mono);font-size:.66rem;color:var(--soft);margin-bottom:.15rem}
+.qlist-item button{background:none;border:none;font-size:.74rem;color:var(--red);cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px;padding:.2rem 0 0}
+.backup-row{display:flex;gap:.6rem;margin-top:1.2rem}
+.hint{font-size:.7rem;color:var(--soft);text-align:center;margin-top:.6rem;line-height:1.5}
+#toast{position:fixed;left:50%;bottom:calc(1.4rem + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+  background:var(--ink);color:#fff;font-size:.82rem;padding:.55rem .95rem;border-radius:99px;
+  transition:all .25s ease;max-width:85vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(min-width:640px){body{max-width:640px;margin:0 auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>AP2-Trainer</h1>
+  <div class="head-stats">
+    <div><b id="h-due">–</b>fällig heute</div>
+    <div><b id="h-streak">–</b>Tage Streak</div>
+    <div><b id="h-countdown">–</b>Tage bis AP2</div>
+  </div>
+</header>
+<nav>
+  <button data-tab="learn" class="active">Lernen</button>
+  <button data-tab="stats">Übersicht</button>
+  <button data-tab="edit">Fragen</button>
+</nav>
+<main>
+  <section id="tab-learn"></section>
+  <section id="tab-stats" hidden></section>
+  <section id="tab-edit" hidden></section>
+</main>
+<div id="toast" role="status"></div>
+<script>
+"use strict";
+const KEY="ap2trainer_v1";
+const INTERVALS=[1,2,5,10,21]; /* Tage je Box 1–5 */
+const NEW_PER_DAY=12;
+const TOPICS=["Netzwerktechnik","Netzwerkdienste","IT-Sicherheit","Server & Storage",
+  "Windows & AD","Cloud & M365","Projektmanagement","Datenschutz & Recht","WiSo"];
+
+/* Starterfragen – über den Fragen-Tab erweiterbar */
+const SEED=[
+{t:0,type:"mc",q:"Wie viele nutzbare Hostadressen hat ein /26-Subnetz?",o:["30","62","64","126"],a:1,e:"/26 → 6 Hostbits → 2⁶ = 64 Adressen, minus Netz- und Broadcastadresse = 62."},
+{t:0,type:"mc",q:"Broadcast-Adresse des Subnetzes 192.168.10.64/26?",o:["192.168.10.95","192.168.10.127","192.168.10.128","192.168.10.255"],a:1,e:"/26 → Blockgröße 64. Netz 64–127, Broadcast = 192.168.10.127."},
+{t:0,type:"open",q:"Berechne die Übertragungszeit: 500 MB über eine 100-Mbit/s-Leitung (ohne Overhead).",m:"500 MB = 500 × 8 = 4000 Mbit.\n4000 Mbit ÷ 100 Mbit/s = 40 Sekunden."},
+{t:0,type:"mc",q:"Auf welcher OSI-Schicht arbeitet ein Router?",o:["Layer 2","Layer 3","Layer 4","Layer 7"],a:1,e:"Router routen anhand von IP-Adressen → Vermittlungsschicht (Layer 3)."},
+{t:0,type:"mc",q:"Hauptzweck von VLANs?",o:["Erhöhung der Bandbreite","Segmentierung von Broadcast-Domänen","Verschlüsselung des Traffics","Redundante Uplinks"],a:1,e:"VLANs trennen Broadcast-Domänen logisch auf demselben Switch – Sicherheit + Struktur."},
+{t:0,type:"open",q:"Nenne den Unterschied zwischen TCP und UDP mit je einem typischen Anwendungsbeispiel.",m:"TCP: verbindungsorientiert, zuverlässig (Handshake, Sequenznummern, Retransmit) – z. B. HTTPS, E-Mail.\nUDP: verbindungslos, schnell, keine Zustellgarantie – z. B. DNS-Anfragen, VoIP/Streaming."},
+{t:1,type:"mc",q:"Welcher Standardport gehört zu HTTPS?",o:["80","143","443","3389"],a:2,e:"443. (80 = HTTP, 143 = IMAP, 3389 = RDP.)"},
+{t:1,type:"mc",q:"Richtige Reihenfolge des DHCP-Ablaufs?",o:["Offer – Discover – Ack – Request","Discover – Offer – Request – Acknowledge","Request – Offer – Discover – Ack","Discover – Request – Offer – Acknowledge"],a:1,e:"DORA: Discover, Offer, Request, Acknowledge."},
+{t:1,type:"mc",q:"Wozu dient ein PTR-Record im DNS?",o:["Mailserver-Zuordnung","Alias auf anderen Namen","Reverse-Auflösung IP → Name","Signierung der Zone"],a:2,e:"PTR = Reverse-DNS: löst eine IP-Adresse zu einem Hostnamen auf (u. a. wichtig für Mailserver-Reputation)."},
+{t:1,type:"open",q:"Was ist DNS-Forwarding und wann setzt man es ein?",m:"Ein DNS-Server leitet Anfragen, die er nicht selbst beantworten kann, an einen definierten anderen DNS-Server weiter (z. B. interner DC → Provider/öffentlicher Resolver). Einsatz: interne Namensauflösung lokal halten, externe Auflösung zentral steuern/filtern."},
+{t:2,type:"mc",q:"Die drei klassischen Schutzziele der Informationssicherheit?",o:["Vertraulichkeit, Integrität, Verfügbarkeit","Authentizität, Anonymität, Redundanz","Verschlüsselung, Firewall, Backup","Datenschutz, Datensicherheit, Compliance"],a:0,e:"CIA-Triade: Confidentiality, Integrity, Availability."},
+{t:2,type:"mc",q:"Was kennzeichnet einen Password-Spray-Angriff?",o:["Viele Passwörter gegen ein Konto","Wenige gängige Passwörter gegen viele Konten","Abfangen von Hashes im Netz","Manipulation der Passwort-Richtlinie"],a:1,e:"Spray = wenige häufige Passwörter über viele Konten verteilt, um Lockout-Schwellen zu umgehen. (Klassischer Brute Force: ein Konto, viele Passwörter.)"},
+{t:2,type:"open",q:"Nenne drei organisatorische/technische Maßnahmen gegen Phishing im Unternehmen.",m:"z. B.: Awareness-Schulungen + Phishing-Simulationen; E-Mail-Filter/Sandboxing (z. B. Hornetsecurity); MFA, damit gestohlene Passwörter allein nicht reichen; SPF/DKIM/DMARC; Meldeprozess für verdächtige Mails."},
+{t:2,type:"mc",q:"Was bedeutet Zwei-Faktor-Authentifizierung korrekt?",o:["Zwei Passwörter nacheinander","Zwei Faktoren aus derselben Kategorie","Zwei Faktoren aus unterschiedlichen Kategorien (Wissen/Besitz/Biometrie)","Login von zwei Geräten"],a:2,e:"Entscheidend: unterschiedliche Faktorkategorien, z. B. Passwort (Wissen) + Authenticator-App (Besitz)."},
+{t:2,type:"mc",q:"Zweck einer DMZ?",o:["Schnellerer Internetzugang","Öffentlich erreichbare Dienste vom internen Netz trennen","VPN-Endpunkt bündeln","WLAN-Gäste priorisieren"],a:1,e:"Server, die aus dem Internet erreichbar sein müssen (Mail, Web), stehen in der DMZ – bei Kompromittierung ist das LAN weiter durch die Firewall geschützt."},
+{t:3,type:"mc",q:"RAID 5: Mindestanzahl Platten und Ausfalltoleranz?",o:["2 Platten / 1 Ausfall","3 Platten / 1 Ausfall","3 Platten / 2 Ausfälle","4 Platten / 2 Ausfälle"],a:1,e:"RAID 5 braucht min. 3 Platten (verteilte Parität), genau 1 Platte darf ausfallen."},
+{t:3,type:"mc",q:"Nettokapazität eines RAID 5 aus 4 × 4 TB?",o:["8 TB","12 TB","16 TB","4 TB"],a:1,e:"(n−1) × Kapazität = 3 × 4 TB = 12 TB; eine Plattenkapazität geht für Parität ab."},
+{t:3,type:"open",q:"Unterschied zwischen differenzieller und inkrementeller Sicherung – inkl. Restore-Aufwand.",m:"Differenziell: sichert alles seit der letzten Vollsicherung → Restore = Voll + letzte Differenz (2 Sätze), Sicherungen wachsen täglich.\nInkrementell: sichert nur Änderungen seit der letzten Sicherung (egal welcher Art) → klein und schnell, Restore = Voll + alle Inkremente in Reihenfolge."},
+{t:3,type:"mc",q:"Wofür steht die 3-2-1-Backup-Regel?",o:["3 Backups pro Tag, 2 Admins, 1 Test","3 Kopien, 2 verschiedene Medien, 1 Kopie extern","3 Medien, 2 Standorte, 1 Cloud","3 Jahre Aufbewahrung, 2 Prüfungen, 1 Restore-Test"],a:1,e:"3 Datenkopien insgesamt, auf 2 unterschiedlichen Medientypen, davon 1 außer Haus/offsite."},
+{t:3,type:"mc",q:"Was ist ein Typ-1-Hypervisor?",o:["Läuft als Anwendung im Betriebssystem","Läuft direkt auf der Hardware (bare metal)","Containerlaufzeit ohne Kernel","Nur für Desktops geeignet"],a:1,e:"Typ 1 = bare metal (Proxmox VE, ESXi, Hyper-V). Typ 2 läuft in einem Host-OS (VirtualBox)."},
+{t:4,type:"mc",q:"Was ist eine GPO?",o:["Ein Benutzerkonto mit Adminrechten","Eine Gruppenrichtlinie zur zentralen Konfiguration von Benutzern/Computern","Ein DNS-Eintrag für den DC","Ein Backupformat von Windows Server"],a:1,e:"Group Policy Object: zentrale Richtlinien (Einstellungen, Skripte, Sicherheit) auf OUs/Domäne angewendet."},
+{t:4,type:"open",q:"Unterschied zwischen Domäne und Arbeitsgruppe?",m:"Arbeitsgruppe: dezentral, lokale Konten je PC, keine zentrale Verwaltung – nur für Kleinstumgebungen.\nDomäne: zentrale Verwaltung über AD/Domänencontroller – zentrale Konten, GPOs, Berechtigungen, SSO, skalierbar."},
+{t:4,type:"mc",q:"Wozu dienen Organisationseinheiten (OUs) im AD?",o:["Ersetzen Sicherheitsgruppen","Strukturierung von Objekten und gezielte GPO-Zuweisung","Replikation zwischen Standorten","Speicherung von DNS-Zonen"],a:1,e:"OUs strukturieren Benutzer/Computer/Gruppen und sind Ankerpunkt für GPO-Verknüpfung und Delegierung."},
+{t:4,type:"open",q:"Ein Client kann der Domäne nicht beitreten. Nenne die wichtigsten Prüfschritte.",m:"1. DNS des Clients zeigt auf den DC (häufigste Ursache).\n2. Netzwerk/Erreichbarkeit des DC (ping, Ports).\n3. Zeitabweichung < 5 min (Kerberos).\n4. Korrekte Credentials/Berechtigung zum Domain-Join.\n5. Computerkonto-Konflikte / Namenskonflikt prüfen."},
+{t:5,type:"mc",q:"Microsoft 365 ist ein Beispiel für…",o:["IaaS","PaaS","SaaS","On-Premises"],a:2,e:"Fertige Anwendung aus der Cloud = Software as a Service. IaaS = Infrastruktur (Azure VMs), PaaS = Plattform (Azure App Service)."},
+{t:5,type:"mc",q:"Was macht Conditional Access in Entra ID?",o:["Verschlüsselt Mails automatisch","Erzwingt Zugriffsrichtlinien anhand von Signalen wie Benutzer, Standort, Gerät, Risiko","Synchronisiert lokale AD-Konten","Verwaltet Lizenzen"],a:1,e:"If-then-Richtlinien: z. B. Zugriff nur mit MFA, nur von konformen Geräten, Block aus bestimmten Ländern."},
+{t:5,type:"open",q:"Dynamische Gruppen in Entra ID: ein Vorteil und ein Sicherheitsrisiko.",m:"Vorteil: automatische Mitgliedschaft per Regel (z. B. Abteilung) – weniger manuelle Pflege, konsistente Lizenz-/Richtlinienzuweisung.\nRisiko: fehlerhafte/zu breite Regeln nehmen unbeabsichtigt Konten auf – die erben dann Rechte/CA-Ausnahmen (klassisches Audit-Finding). Regeln müssen regelmäßig geprüft werden."},
+{t:6,type:"mc",q:"Was stellt ein Gantt-Diagramm dar?",o:["Kostenverteilung im Projekt","Zeitliche Lage und Dauer von Vorgängen","Organisationsstruktur","Risikomatrix"],a:1,e:"Balkendiagramm über die Zeitachse: Vorgänge, Dauer, Abhängigkeiten, Meilensteine."},
+{t:6,type:"mc",q:"Das „magische Dreieck\" des Projektmanagements besteht aus…",o:["Zeit, Kosten, Qualität/Leistung","Planung, Durchführung, Kontrolle","Budget, Personal, Material","Risiko, Nutzen, Aufwand"],a:0,e:"Zeit, Kosten, Qualität konkurrieren: Änderung an einer Größe wirkt auf die anderen."},
+{t:6,type:"open",q:"Wozu dient eine Nutzwertanalyse und wie geht man vor?",m:"Zweck: objektivierte Auswahl zwischen Alternativen (z. B. Produkte/Anbieter).\nVorgehen: Kriterien festlegen → gewichten (Summe 100 %) → Alternativen je Kriterium bewerten (Punkte) → Punkte × Gewichtung → Summen vergleichen, höchster Nutzwert gewinnt."},
+{t:6,type:"mc",q:"Was beschreibt die Ist-Analyse im IHK-Projektantrag?",o:["Die gewünschte Ziellösung","Die Ausgangssituation und das Problem vor Projektbeginn","Den Zeitplan des Projekts","Die Abnahme durch den Kunden"],a:1,e:"Ist-Analyse = aktueller Zustand + Problem/Handlungsbedarf. Daraus folgt das Soll-Konzept."},
+{t:7,type:"mc",q:"Frist für die Meldung einer Datenpanne an die Aufsichtsbehörde (DSGVO)?",o:["24 Stunden","48 Stunden","72 Stunden","1 Woche"],a:2,e:"Art. 33 DSGVO: unverzüglich, möglichst binnen 72 Stunden nach Bekanntwerden."},
+{t:7,type:"mc",q:"Was sind personenbezogene Daten nach DSGVO?",o:["Nur Name und Adresse","Alle Informationen über eine identifizierte oder identifizierbare natürliche Person","Nur besonders sensible Daten","Nur digital gespeicherte Daten"],a:1,e:"Art. 4 DSGVO – auch IP-Adressen, Standortdaten, Kennnummern können personenbezogen sein."},
+{t:7,type:"open",q:"Was sind TOM? Nenne drei Beispiele.",m:"Technische und organisatorische Maßnahmen (Art. 32 DSGVO) zum Schutz personenbezogener Daten.\nBeispiele: Verschlüsselung, Zugriffskontrolle/Berechtigungskonzept, Backups, Schulungen, Besucherregelung, Protokollierung."},
+{t:8,type:"mc",q:"Die vier Ziele des Magischen Vierecks?",o:["Preisniveaustabilität, hoher Beschäftigungsstand, außenwirtschaftliches Gleichgewicht, stetiges Wirtschaftswachstum","Inflation, Deflation, Export, Import","Löhne, Preise, Zinsen, Steuern","Wachstum, Umwelt, Verteilung, Stabilität"],a:0,e:"§1 StabG: die vier gesamtwirtschaftlichen Ziele – gleichzeitig kaum vollständig erreichbar, daher „magisch\"."},
+{t:8,type:"mc",q:"Richtige Reihenfolge der Konjunkturphasen?",o:["Boom – Aufschwung – Rezession – Depression","Aufschwung – Boom – Abschwung/Rezession – Depression/Tief","Depression – Boom – Aufschwung – Rezession","Rezession – Boom – Tief – Aufschwung"],a:1,e:"Expansion (Aufschwung) → Hochkonjunktur (Boom) → Abschwung (Rezession) → Tief (Depression) → wieder Aufschwung."}
+];
+
+let S=load();
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}
+  return {
+    questions:SEED.map((q,i)=>({id:"seed"+i,...q})),
+    cards:{},                    /* id -> {box, due, intro} */
+    introduced:{},               /* dateISO -> Anzahl neu */
+    streak:0, lastStudy:"",
+    examDate:"2027-05-04"
+  };
+}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Speichern fehlgeschlagen")}}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function todayISO(){const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function addDays(iso,n){const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+/* ---- Fällige Karten + neue Karten ---- */
+function dueQueue(){
+  const today=todayISO();
+  const due=S.questions.filter(q=>S.cards[q.id]&&S.cards[q.id].due<=today);
+  const introducedToday=S.introduced[today]||0;
+  const room=Math.max(0,NEW_PER_DAY-introducedToday);
+  const fresh=S.questions.filter(q=>!S.cards[q.id]).slice(0,room);
+  return [...due,...fresh];
+}
+function answer(q,correct){
+  const today=todayISO();
+  if(!S.cards[q.id]){S.introduced[today]=(S.introduced[today]||0)+1}
+  let box=S.cards[q.id]?S.cards[q.id].box:1;
+  box=correct?Math.min(5,box+1):1;
+  S.cards[q.id]={box,due:addDays(today,correct?INTERVALS[box-1]:1)};
+  /* Streak */
+  if(S.lastStudy!==today){
+    S.streak=(S.lastStudy===addDays(today,-1))?S.streak+1:1;
+    S.lastStudy=today;
+  }
+  persist();renderHead();
+}
+
+/* ---- Kopf ---- */
+function renderHead(){
+  document.getElementById("h-due").textContent=dueQueue().length;
+  document.getElementById("h-streak").textContent=S.streak;
+  const days=Math.max(0,Math.round((new Date(S.examDate)-new Date(todayISO()))/86400000));
+  document.getElementById("h-countdown").textContent=days;
+}
+
+/* ---- Tab Lernen ---- */
+let queue=[],qi=0,doneCount=0;
+function startSession(){queue=dueQueue();qi=0;doneCount=0;renderLearn()}
+function renderLearn(){
+  const el=document.getElementById("tab-learn");
+  if(qi>=queue.length){
+    el.innerHTML=`<div class="card done-msg">
+      ${doneCount?`<b>Session geschafft – ${doneCount} Karten.</b><br>Streak: ${S.streak} Tage. Morgen geht's weiter.`
+        :`<b>Für heute alles erledigt.</b><br>Keine fälligen Karten – das Leitner-System meldet sich, wenn Wiederholungen anstehen.`}
+      </div>
+      <button class="primary" id="recheck">Neu prüfen</button>`;
+    document.getElementById("recheck").addEventListener("click",startSession);
+    return;
+  }
+  const q=queue[qi];
+  const card=S.cards[q.id];
+  const boxLabel=card?`Box ${card.box}`:"Neu";
+  let body;
+  if(q.type==="mc"){
+    body=`<div class="opts">${q.o.map((o,i)=>`<button data-opt="${i}">${esc(o)}</button>`).join("")}</div>
+      <div class="expl" id="expl" hidden></div>
+      <button class="primary" id="next" hidden style="margin-top:.8rem">Weiter</button>`;
+  }else{
+    body=`<button class="primary" id="reveal" style="margin-top:.9rem">Antwort anzeigen</button>
+      <div class="expl" id="model" hidden>${esc(q.m)}</div>
+      <div class="self-btns" id="self" hidden>
+        <button class="yes">Gewusst</button><button class="no">Nicht gewusst</button>
+      </div>`;
+  }
+  el.innerHTML=`
+    <div class="progress-line">Karte ${qi+1} von ${queue.length}</div>
+    <div class="card">
+      <span class="q-box">${boxLabel}</span>
+      <span class="q-topic">${TOPICS[q.t]}</span>
+      <div class="q-text">${esc(q.q)}</div>
+      ${body}
+    </div>`;
+  if(q.type==="mc"){
+    let answered=false;
+    el.querySelectorAll("[data-opt]").forEach(b=>b.addEventListener("click",()=>{
+      if(answered)return;answered=true;
+      const i=+b.dataset.opt,ok=i===q.a;
+      b.classList.add(ok?"correct":"wrong");
+      if(!ok)el.querySelector(`[data-opt="${q.a}"]`).classList.add("correct");
+      const ex=document.getElementById("expl");ex.hidden=false;ex.textContent=q.e||"";
+      document.getElementById("next").hidden=false;
+      answer(q,ok);doneCount++;
+    }));
+    document.getElementById("next").addEventListener("click",()=>{qi++;renderLearn()});
+  }else{
+    document.getElementById("reveal").addEventListener("click",()=>{
+      document.getElementById("reveal").hidden=true;
+      document.getElementById("model").hidden=false;
+      document.getElementById("self").hidden=false;
+    });
+    el.querySelector(".yes").addEventListener("click",()=>{answer(q,true);doneCount++;qi++;renderLearn()});
+    el.querySelector(".no").addEventListener("click",()=>{answer(q,false);doneCount++;qi++;renderLearn()});
+  }
+}
+
+/* ---- Tab Übersicht ---- */
+function renderStats(){
+  const counts=[0,0,0,0,0];let newCount=0;
+  for(const q of S.questions){
+    const c=S.cards[q.id];
+    if(c)counts[c.box-1]++;else newCount++;
+  }
+  document.getElementById("tab-stats").innerHTML=`
+    <div class="card">
+      <b>${S.questions.length} Fragen im Bestand</b> · ${newCount} noch nie gelernt
+      <div class="boxes">
+        ${counts.map((n,i)=>`<div class="boxcell"><b>${n}</b><span>Box ${i+1}</span></div>`).join("")}
+      </div>
+      <p class="hint" style="text-align:left">Intervalle: 1 / 2 / 5 / 10 / 21 Tage. Box 5 = sitzt.</p>
+    </div>
+    <div class="section-label">Prüfungsdatum</div>
+    <div class="card">
+      <label>AP2-Termin (Schätzung – anpassbar)
+        <input type="date" id="exam-date" value="${S.examDate}"></label>
+    </div>
+    <div class="backup-row">
+      <button class="ghost" id="export-btn">Backup exportieren</button>
+      <button class="ghost" id="import-btn">Importieren</button>
+      <input type="file" id="import-file" accept="application/json" hidden>
+    </div>
+    <p class="hint">Fortschritt liegt lokal auf diesem Gerät – gelegentlich exportieren.<br>
+    Ehrlich gesagt: Der Fragenbestand ist Faktenfundament, kein Ersatz für alte IHK-Prüfungen mit Szenarioaufgaben.</p>`;
+  document.getElementById("exam-date").addEventListener("change",ev=>{
+    S.examDate=ev.target.value;persist();renderHead();toast("Termin gespeichert")});
+  document.getElementById("export-btn").addEventListener("click",()=>{
+    const blob=new Blob([JSON.stringify({app:"ap2trainer",version:1,exported:new Date().toISOString(),state:S},null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    a.download=`ap2-backup-${todayISO()}.json`;a.click();URL.revokeObjectURL(a.href)});
+  document.getElementById("import-btn").addEventListener("click",()=>document.getElementById("import-file").click());
+  document.getElementById("import-file").addEventListener("change",ev=>{
+    const f=ev.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=()=>{try{
+      const d=JSON.parse(r.result);
+      if(!d.state||!Array.isArray(d.state.questions))throw new Error();
+      S=d.state;persist();renderHead();renderStats();renderEdit();startSession();toast("Backup importiert");
+    }catch(e){toast("Import fehlgeschlagen")}ev.target.value=""};
+    r.readAsText(f)});
+}
+
+/* ---- Tab Fragen (Editor) ---- */
+function renderEdit(){
+  const list=S.questions.map(q=>`
+    <div class="qlist-item">
+      <div class="qlist-meta">${TOPICS[q.t]} · ${q.type==="mc"?"Multiple Choice":"Offen"}</div>
+      ${esc(q.q.length>90?q.q.slice(0,90)+"…":q.q)}
+      <div><button data-del="${q.id}">Löschen</button></div>
+    </div>`).join("");
+  document.getElementById("tab-edit").innerHTML=`
+    <div class="section-label">Neue Frage</div>
+    <div class="card">
+      <label>Thema<select id="e-topic">${TOPICS.map((t,i)=>`<option value="${i}">${t}</option>`).join("")}</select></label>
+      <label>Typ<select id="e-type"><option value="mc">Multiple Choice</option><option value="open">Offen (Selbsteinschätzung)</option></select></label>
+      <label>Frage<textarea id="e-q"></textarea></label>
+      <div id="e-mc">
+        <label>Antwortoptionen (eine je Zeile, richtige zuerst – wird gemischt angezeigt)
+          <textarea id="e-opts" placeholder="Richtige Antwort&#10;Falsch 1&#10;Falsch 2&#10;Falsch 3"></textarea></label>
+        <label>Erklärung<textarea id="e-expl"></textarea></label>
+      </div>
+      <div id="e-open" hidden>
+        <label>Musterantwort<textarea id="e-model"></textarea></label>
+      </div>
+      <button class="primary" id="e-save">Frage speichern</button>
+    </div>
+    <div class="section-label">Bestand (${S.questions.length})</div>
+    <div class="card">${list}</div>`;
+  document.getElementById("e-type").addEventListener("change",ev=>{
+    document.getElementById("e-mc").hidden=ev.target.value!=="mc";
+    document.getElementById("e-open").hidden=ev.target.value!=="open"});
+  document.getElementById("e-save").addEventListener("click",()=>{
+    const type=document.getElementById("e-type").value;
+    const qText=document.getElementById("e-q").value.trim();
+    if(!qText){toast("Frage fehlt");return}
+    const base={id:uid(),t:+document.getElementById("e-topic").value,type,q:qText};
+    if(type==="mc"){
+      const lines=document.getElementById("e-opts").value.split("\n").map(s=>s.trim()).filter(Boolean);
+      if(lines.length<2){toast("Mind. 2 Optionen");return}
+      /* richtige Antwort steht zuerst → mischen, Index merken */
+      const correct=lines[0];
+      const shuffled=[...lines].sort(()=>Math.random()-.5);
+      base.o=shuffled;base.a=shuffled.indexOf(correct);
+      base.e=document.getElementById("e-expl").value.trim();
+    }else{
+      base.m=document.getElementById("e-model").value.trim();
+      if(!base.m){toast("Musterantwort fehlt");return}
+    }
+    S.questions.push(base);persist();renderEdit();renderHead();toast("Frage gespeichert");
+  });
+  document.getElementById("tab-edit").querySelectorAll("[data-del]").forEach(b=>
+    b.addEventListener("click",()=>{
+      if(confirm("Frage wirklich löschen?")){
+        S.questions=S.questions.filter(q=>q.id!==b.dataset.del);
+        delete S.cards[b.dataset.del];
+        persist();renderEdit();renderHead();
+      }}));
+}
+
+/* ---- Tabs ---- */
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x===b));
+  for(const t of["learn","stats","edit"])document.getElementById("tab-"+t).hidden=t!==b.dataset.tab;
+  if(b.dataset.tab==="learn")startSession();
+  if(b.dataset.tab==="stats")renderStats();
+  if(b.dataset.tab==="edit")renderEdit();
+}));
+
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+renderHead();startSession();
+</script>
+</body>
+</html>

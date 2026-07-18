@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>okok · Apps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#14181F;--card:#1D232D;--line:#2B3340;--ink:#E9ECF1;--soft:#8B96A5;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;--sans:'IBM Plex Sans',-apple-system,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;
+  padding:calc(2rem + env(safe-area-inset-top)) 1.25rem calc(2rem + env(safe-area-inset-bottom));
+  max-width:640px;margin:0 auto}
+h1{font-size:1.4rem}
+p.sub{font-family:var(--mono);font-size:.72rem;color:var(--soft);letter-spacing:.12em;
+  text-transform:uppercase;margin:.3rem 0 1.6rem}
+a.app{display:flex;align-items:center;gap:.9rem;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:.9rem;margin-bottom:.6rem;text-decoration:none;color:var(--ink)}
+a.app img{width:48px;height:48px;border-radius:11px;flex:none}
+a.app b{display:block;font-size:.98rem}
+a.app span{font-size:.8rem;color:var(--soft);line-height:1.35}
+p.note{font-size:.75rem;color:var(--soft);margin-top:1.4rem;line-height:1.6}
+</style>
+</head>
+<body>
+<h1>okok · Apps</h1>
+<p class="sub">Jede App einzeln installieren: öffnen → Teilen → Zum Home-Bildschirm</p>
+
+<a class="app" href="w124/"><img src="w124/icon-192.png" alt="">
+  <div><b>W124 Scheckheft</b><span>Wartung, Reparaturen und Kosten für den 200D – H-Kennzeichen-Doku inklusive.</span></div></a>
+
+<a class="app" href="mealprep/"><img src="mealprep/icon-192.png" alt="">
+  <div><b>Meal-Prep-Planer</b><span>Wochenplan Mo–Fr, Sonntags-Kochplan, Einkaufsliste, kcal & Protein.</span></div></a>
+
+<a class="app" href="ap2/"><img src="ap2/icon-192.png" alt="">
+  <div><b>AP2-Trainer</b><span>Leitner-System mit Streak, Countdown und eigenem Fragen-Editor.</span></div></a>
+
+<a class="app" href="blitzblank/"><img src="blitzblank/icon-192.png" alt="">
+  <div><b>Blitzblank</b><span>Haushalt fair geteilt – Rotation, Punkte, Verlauf.</span></div></a>
+
+<a class="app" href="approjekt/"><img src="approjekt/icon-192.png" alt="">
+  <div><b>Abschlussprojekt-Planer</b><span>IHK-40-h-Budget, Phasen geplant vs. gebucht, Meilensteine.</span></div></a>
+
+<a class="app" href="ticketdoku/"><img src="ticketdoku/icon-192.png" alt="">
+  <div><b>Ticket-Doku-Generator</b><span>Rohnotizen → Hausstil-Doku für Visoma. KI, eigener API-Key nötig.</span></div></a>
+
+<a class="app" href="vamos/"><img src="vamos/icon-192.png" alt="">
+  <div><b>Vamos!</b><span>Spanisch-Rollenspiele: sechs Valencia-Szenarien. KI, eigener API-Key nötig.</span></div></a>
+
+<a class="app" href="dieselalsur/"><img src="dieselalsur/icon-192.png" alt="">
+  <div><b>Diesel al Sur</b><span>Der 200D fährt nach Süden – 2100 km, Vokabeln an der Tankstelle.</span></div></a>
+
+<p class="note">Alle Daten bleiben lokal auf dem Gerät (localStorage). Jede App hat einen
+Backup-Export – gelegentlich nutzen, da iOS Speicher lange ungenutzter Web-Apps löschen kann.</p>
+</body>
+</html>

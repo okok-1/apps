@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blitzblank</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blitzblank">
+<meta name="theme-color" content="#26221B">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --lemon:#E8B912; --lemon-deep:#B78D00; --charcoal:#26221B; --charcoal-mid:#3A342A;
+  --paper:#FDFCF7; --line:#EAE6D8; --ink:#26221B; --soft:#7A745F;
+  --a:#3E6FA8; --b:#2F6B47; --red:#9A3B2E;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom))}
+header{background:var(--charcoal);color:#fff;padding:calc(1rem + env(safe-area-inset-top)) 1.25rem 1.1rem}
+header h1{font-size:1.2rem;font-weight:700}
+header h1 span{color:var(--lemon)}
+header p{font-family:var(--mono);font-size:.7rem;color:#B9B29C;letter-spacing:.1em;text-transform:uppercase;margin-top:.15rem}
+main{padding:1rem 1.25rem}
+@media(min-width:640px){body{max-width:640px;margin:0 auto}}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:.9rem;margin-bottom:.6rem}
+.section-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--soft);margin:1.2rem 0 .5rem;display:flex;align-items:center;gap:.6rem}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line)}
+/* Fairness */
+.fair-names{display:flex;justify-content:space-between;font-size:.85rem;font-weight:600;margin-bottom:.4rem}
+.fair-names .pa{color:var(--a)} .fair-names .pb{color:var(--b)}
+.fair-bar{height:14px;border-radius:99px;background:var(--b);overflow:hidden;display:flex}
+.fair-bar>div{background:var(--a);height:100%;transition:width .3s ease}
+.fair-nums{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.72rem;color:var(--soft);margin-top:.35rem}
+.fair-verdict{text-align:center;font-size:.8rem;margin-top:.5rem;color:var(--soft)}
+/* Aufgaben */
+.task{display:flex;align-items:center;gap:.7rem}
+.task-main{flex:1;min-width:0}
+.task-name{font-weight:600;font-size:.95rem}
+.task-meta{font-family:var(--mono);font-size:.7rem;color:var(--soft)}
+.turn-chip{font-family:var(--mono);font-size:.68rem;font-weight:600;border-radius:99px;
+  padding:.22rem .55rem;color:#fff;white-space:nowrap}
+.turn-chip.pa{background:var(--a)} .turn-chip.pb{background:var(--b)}
+.task button.done{background:var(--lemon);border:none;border-radius:8px;color:var(--charcoal);
+  font-weight:700;font-size:.82rem;padding:.55rem .8rem;cursor:pointer;font-family:var(--sans)}
+.task-actions{display:flex;gap:.9rem;margin-top:.35rem}
+.task-actions button{background:none;border:none;font-size:.72rem;color:var(--soft);cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px;padding:0}
+.task-actions button.del{color:var(--red)}
+/* Log */
+.log-item{display:flex;justify-content:space-between;gap:.6rem;padding:.45rem 0;
+  border-bottom:1px dashed var(--line);font-size:.85rem}
+.log-item:last-child{border-bottom:none}
+.log-item span:last-child{font-family:var(--mono);font-size:.72rem;color:var(--soft);white-space:nowrap}
+/* Formular */
+form{display:grid;gap:.6rem;grid-template-columns:2fr 1fr}
+label{display:flex;flex-direction:column;gap:.25rem;font-size:.72rem;color:var(--soft);font-weight:500}
+label.wide{grid-column:1/-1}
+input,select{font-family:var(--sans);font-size:1rem;color:var(--ink);
+  border:1px solid var(--line);border-radius:7px;padding:.5rem .55rem;background:var(--paper);width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--lemon-deep);outline-offset:1px}
+button.primary{grid-column:1/-1;background:var(--charcoal);color:#fff;border:none;border-radius:8px;
+  padding:.75rem;font-weight:600;font-size:.95rem;cursor:pointer;font-family:var(--sans)}
+button.ghost{background:none;border:1px solid var(--line);border-radius:8px;
+  padding:.7rem .9rem;font-size:.85rem;color:var(--soft);cursor:pointer;flex:1}
+.names-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.empty{padding:1.4rem 1rem;text-align:center;border:1.5px dashed var(--line);border-radius:10px;
+  color:var(--soft);font-size:.88rem;line-height:1.5}
+.backup-row{display:flex;gap:.6rem;margin-top:1.2rem}
+.hint{font-size:.7rem;color:var(--soft);text-align:center;margin-top:.6rem;line-height:1.5}
+#toast{position:fixed;left:50%;bottom:calc(1.4rem + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+  background:var(--ink);color:#fff;font-size:.82rem;padding:.55rem .95rem;border-radius:99px;
+  transition:all .25s ease;max-width:85vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Blitz<span>blank</span></h1>
+  <p>Haushalt fair geteilt</p>
+</header>
+<main>
+  <div class="section-label">Fairness</div>
+  <div class="card" id="fairness"></div>
+  <div class="section-label">Aufgaben</div>
+  <div id="tasks"></div>
+  <div class="section-label">Neue Aufgabe</div>
+  <form class="card" id="task-form">
+    <label>Aufgabe<input id="t-name" required placeholder="z. B. Bad putzen"></label>
+    <label>Punkte<input id="t-points" type="text" inputmode="numeric" required placeholder="1–5"></label>
+    <label class="wide">Startet bei<select id="t-turn"></select></label>
+    <button class="primary" type="submit">Aufgabe anlegen</button>
+  </form>
+  <div class="section-label">Zuletzt erledigt</div>
+  <div class="card" id="log"></div>
+  <div class="section-label">Namen</div>
+  <div class="card">
+    <div class="names-row">
+      <label>Person A<input id="n-a"></label>
+      <label>Person B<input id="n-b"></label>
+    </div>
+  </div>
+  <div class="backup-row">
+    <button class="ghost" id="export-btn">Backup exportieren</button>
+    <button class="ghost" id="import-btn">Importieren</button>
+    <input type="file" id="import-file" accept="application/json" hidden>
+  </div>
+  <p class="hint">Daten liegen nur auf diesem Gerät. Für zwei Handys: eine Person führt die App,<br>
+  oder per Export/Import synchronisieren – echten Live-Sync gibt's ohne Server nicht.</p>
+</main>
+<div id="toast" role="status"></div>
+<script>
+"use strict";
+const KEY="blitzblank_v1";
+let S=load();
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}
+  return {people:["Person A","Person B"],tasks:[],log:[]};
+}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Speichern fehlgeschlagen")}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function fmt(ts){const d=new Date(ts);
+  return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear()}
+
+function totals(){
+  const t=[0,0];
+  for(const l of S.log)t[l.person]+=l.points;
+  return t;
+}
+function renderFairness(){
+  const [a,b]=totals();
+  const sum=a+b;
+  const pctA=sum?Math.round(a/sum*100):50;
+  let verdict="Noch keine Daten – legt los.";
+  if(sum){
+    const diff=Math.abs(a-b);
+    if(diff===0)verdict="Perfekt ausgeglichen.";
+    else{
+      const ahead=a>b?S.people[0]:S.people[1];
+      verdict=`${esc(ahead)} liegt ${diff} Punkt${diff===1?"":"e"} vorn – ${a>b?esc(S.people[1]):esc(S.people[0])} ist dran.`;
+    }
+  }
+  document.getElementById("fairness").innerHTML=`
+    <div class="fair-names"><span class="pa">${esc(S.people[0])}</span><span class="pb">${esc(S.people[1])}</span></div>
+    <div class="fair-bar"><div style="width:${pctA}%"></div></div>
+    <div class="fair-nums"><span>${a} Punkte</span><span>${b} Punkte</span></div>
+    <div class="fair-verdict">${verdict}</div>`;
+}
+function renderTasks(){
+  const el=document.getElementById("tasks");
+  if(!S.tasks.length){
+    el.innerHTML=`<div class="empty">Noch keine Aufgaben.<br>Unten anlegen – Punkte nach Aufwand (Bad putzen 3, Müll raus 1).</div>`;
+    return;
+  }
+  el.innerHTML=S.tasks.map(t=>`
+    <div class="card task-wrap">
+      <div class="task">
+        <div class="task-main">
+          <div class="task-name">${esc(t.name)}</div>
+          <div class="task-meta">${t.points} Punkt${t.points===1?"":"e"}</div>
+        </div>
+        <span class="turn-chip ${t.turn===0?"pa":"pb"}">${esc(S.people[t.turn])}</span>
+        <button class="done" data-done="${t.id}">Erledigt</button>
+      </div>
+      <div class="task-actions"><button class="del" data-del="${t.id}">Löschen</button></div>
+    </div>`).join("");
+  el.querySelectorAll("[data-done]").forEach(b=>b.addEventListener("click",()=>{
+    const t=S.tasks.find(x=>x.id===b.dataset.done);if(!t)return;
+    S.log.unshift({taskId:t.id,name:t.name,person:t.turn,points:t.points,ts:Date.now()});
+    if(S.log.length>200)S.log.length=200;
+    t.turn=t.turn===0?1:0; /* Rotation: nächstes Mal die andere Person */
+    persist();renderAll();
+    toast(`${t.name} erledigt – nächstes Mal: ${S.people[t.turn]}`);
+  }));
+  el.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
+    const t=S.tasks.find(x=>x.id===b.dataset.del);
+    if(t&&confirm(`„${t.name}" löschen? (Verlauf bleibt erhalten)`)){
+      S.tasks=S.tasks.filter(x=>x.id!==t.id);persist();renderAll();
+    }}));
+}
+function renderLog(){
+  const el=document.getElementById("log");
+  el.innerHTML=S.log.length?S.log.slice(0,15).map(l=>`
+    <div class="log-item">
+      <span>${esc(l.name)} · <b>${esc(S.people[l.person])}</b> (+${l.points})</span>
+      <span>${fmt(l.ts)}</span>
+    </div>`).join(""):`<div class="hint" style="text-align:left">Noch nichts erledigt.</div>`;
+}
+function renderForm(){
+  document.getElementById("t-turn").innerHTML=
+    S.people.map((p,i)=>`<option value="${i}">${esc(p)}</option>`).join("");
+  document.getElementById("n-a").value=S.people[0];
+  document.getElementById("n-b").value=S.people[1];
+}
+function renderAll(){renderFairness();renderTasks();renderLog();renderForm()}
+
+document.getElementById("task-form").addEventListener("submit",ev=>{
+  ev.preventDefault();
+  const name=document.getElementById("t-name").value.trim();
+  const points=Math.max(1,parseInt(document.getElementById("t-points").value,10)||1);
+  if(!name)return;
+  S.tasks.push({id:uid(),name,points,turn:+document.getElementById("t-turn").value});
+  persist();document.getElementById("task-form").reset();renderAll();toast("Aufgabe angelegt");
+});
+document.getElementById("n-a").addEventListener("change",ev=>{
+  S.people[0]=ev.target.value.trim()||"Person A";persist();renderAll()});
+document.getElementById("n-b").addEventListener("change",ev=>{
+  S.people[1]=ev.target.value.trim()||"Person B";persist();renderAll()});
+
+document.getElementById("export-btn").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify({app:"blitzblank",version:1,exported:new Date().toISOString(),state:S},null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=`blitzblank-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();
+  URL.revokeObjectURL(a.href)});
+document.getElementById("import-btn").addEventListener("click",()=>document.getElementById("import-file").click());
+document.getElementById("import-file").addEventListener("change",ev=>{
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{
+    const d=JSON.parse(r.result);
+    if(!d.state||!Array.isArray(d.state.tasks))throw new Error();
+    S=d.state;persist();renderAll();toast("Backup importiert");
+  }catch(e){toast("Import fehlgeschlagen")}ev.target.value=""};
+  r.readAsText(f)});
+
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+renderAll();
+</script>
+</body>
+</html>

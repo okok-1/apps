@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Diesel al Sur</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diesel">
+<meta name="theme-color" content="#101418">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#101418;--ink:#EDEDE6;--soft:#8A94A0;--blau:#35507A;--amber:#E8B912;--red:#C4634F;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{height:100%;overscroll-behavior:none}
+body{font-family:var(--mono);background:var(--bg);color:var(--ink);display:flex;flex-direction:column;
+  max-width:640px;margin:0 auto}
+.hud{flex:none;display:flex;justify-content:space-between;gap:.6rem;
+  padding:calc(.8rem + env(safe-area-inset-top)) 1rem .6rem;font-size:.72rem;color:var(--soft)}
+.hud b{color:var(--ink);font-size:.95rem;display:block}
+.fuelbar{flex:none;height:8px;margin:0 1rem;border-radius:99px;background:#242B33;overflow:hidden}
+.fuelbar div{height:100%;background:var(--amber);transition:width .2s linear}
+.fuelbar div.low{background:var(--red)}
+#stage{flex:1;position:relative;margin:.6rem 0 0;min-height:0}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.overlay{position:absolute;inset:0;background:rgba(16,20,24,.92);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:1.5rem;gap:.8rem}
+.overlay h2{font-size:1.3rem}
+.overlay p{font-size:.82rem;color:var(--soft);line-height:1.6;max-width:26rem}
+.overlay .es{font-size:1.15rem;color:var(--amber)}
+.opts{display:grid;gap:.55rem;width:100%;max-width:22rem}
+.opts button,button.go{font-family:var(--mono);font-size:.95rem;border:1px solid #3A4450;
+  background:#1B2129;color:var(--ink);border-radius:9px;padding:.8rem;cursor:pointer}
+button.go{background:var(--blau);border-color:var(--blau);font-weight:600}
+.opts button.ok{background:#2F6B47;border-color:#2F6B47}
+.opts button.no{background:var(--red);border-color:var(--red)}
+.foot{flex:none;text-align:center;font-size:.64rem;color:var(--soft);
+  padding:.5rem 1rem calc(.7rem + env(safe-area-inset-bottom))}
+</style>
+</head>
+<body>
+<div class="hud">
+  <div><b id="h-km">0 km</b>Richtung Süden</div>
+  <div style="text-align:center"><b id="h-seg">Hannover</b>Etappe</div>
+  <div style="text-align:right"><b id="h-best">–</b>Rekord</div>
+</div>
+<div class="fuelbar"><div id="fuel" style="width:100%"></div></div>
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div class="overlay" id="overlay"></div>
+</div>
+<div class="foot">Tippen links/rechts = Spur wechseln · Tankstopp alle 350 km: Vokabel = voller Tank</div>
+<script>
+"use strict";
+const KEY="dieselalsur_v1";
+const TOTAL=2100;
+const CITIES=[[0,"Hannover"],[300,"Köln"],[500,"Luxemburg"],[1000,"Lyon"],[1500,"Montpellier"],[1750,"Barcelona"],[2100,"Valencia"]];
+const VOCAB=[["el coche","das Auto"],["la gasolinera","die Tankstelle"],["a la izquierda","links"],["a la derecha","rechts"],
+["todo recto","geradeaus"],["lento","langsam"],["rápido","schnell"],["la carretera","die Landstraße"],
+["la autopista","die Autobahn"],["el sur","der Süden"],["el norte","der Norden"],["la playa","der Strand"],
+["la ciudad","die Stadt"],["la calle","die Straße"],["el aceite","das Öl"],["el motor","der Motor"],
+["la rueda","das Rad / der Reifen"],["el viaje","die Reise"],["el mapa","die Karte"],["el puente","die Brücke"],
+["el peaje","die Maut"],["el descanso","die Pause"],["lejos","weit"],["cerca","nah"]];
+
+let best=0;try{best=+localStorage.getItem(KEY)||0}catch(e){}
+document.getElementById("h-best").textContent=best?best+" km":"–";
+
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+const overlay=document.getElementById("overlay");
+let W=0,H=0,laneX=[];
+function resize(){
+  const r=cv.parentElement.getBoundingClientRect();
+  W=cv.width=r.width*devicePixelRatio;H=cv.height=r.height*devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  const w=r.width;
+  laneX=[w*0.25,w*0.5,w*0.75];
+}
+window.addEventListener("resize",resize);resize();
+
+let state="menu";           /* menu | drive | quiz | over | won */
+let km=0,fuel=100,lane=1,obstacles=[],dashOffset=0,lastQuizKm=0,speed=1,invuln=0,lastT=0;
+
+function seg(){for(let i=CITIES.length-1;i>=0;i--)if(km>=CITIES[i][0])
+  return i<CITIES.length-1?CITIES[i][1]+" → "+CITIES[i+1][1]:CITIES[i][1];return"Hannover"}
+
+function hud(){
+  document.getElementById("h-km").textContent=Math.floor(km)+" km";
+  document.getElementById("h-seg").textContent=seg();
+  const f=document.getElementById("fuel");
+  f.style.width=Math.max(0,fuel)+"%";
+  f.className=fuel<25?"low":"";
+}
+
+function drawCar(x,y,w,h,color,windshield){
+  ctx.fillStyle=color;
+  ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,7);ctx.fill();
+  ctx.fillStyle=windshield;
+  ctx.beginPath();ctx.roundRect(x-w/2+5,y-h/2+8,w-10,h*0.22,3);ctx.fill();
+  ctx.beginPath();ctx.roundRect(x-w/2+5,y+h/2-8-h*0.18,w-10,h*0.18,3);ctx.fill();
+}
+
+function draw(){
+  const w=cv.getBoundingClientRect().width,h=cv.getBoundingClientRect().height;
+  ctx.fillStyle="#2E3238";ctx.fillRect(0,0,w,h);                    /* Asphalt */
+  ctx.fillStyle="#3B7D53";ctx.fillRect(0,0,w*0.08,h);ctx.fillRect(w*0.92,0,w*0.08,h); /* Grün */
+  ctx.strokeStyle="#EDEDE6";ctx.lineWidth=3;ctx.setLineDash([26,30]);
+  ctx.lineDashOffset=-dashOffset;
+  for(const lx of[w*0.375,w*0.625]){ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,h);ctx.stroke()}
+  ctx.setLineDash([]);
+  ctx.strokeRect(w*0.08+1.5,-.5,1,h+1);ctx.strokeRect(w*0.92-2.5,-.5,1,h+1);
+  for(const o of obstacles)drawCar(laneX[o.lane],o.y,46,78,o.c,"#1A1D22");
+  if(!(invuln>0&&Math.floor(invuln*10)%2===0))
+    drawCar(laneX[lane],h-90,44,74,"#35507A","#BFD2E6");            /* der 200D */
+}
+
+function loop(t){
+  requestAnimationFrame(loop);
+  const dt=Math.min(0.05,(t-lastT)/1000)||0;lastT=t;
+  if(state!=="drive"){draw();return}
+  speed=1+km/900;
+  km+=dt*14*speed;                       /* Reisetempo */
+  fuel-=dt*2.1;                          /* Verbrauch */
+  dashOffset+=dt*300*speed;
+  if(invuln>0)invuln-=dt;
+  const h=cv.getBoundingClientRect().height;
+  if(Math.random()<dt*(0.55+speed*0.25)&&obstacles.length<5){
+    const l=Math.floor(Math.random()*3);
+    if(!obstacles.some(o=>o.lane===l&&o.y<140))
+      obstacles.push({lane:l,y:-90,c:["#6E7178","#8A5A3B","#5B6E5B","#7A7365"][Math.floor(Math.random()*4)]});
+  }
+  for(const o of obstacles)o.y+=dt*(160+speed*70);
+  obstacles=obstacles.filter(o=>o.y<h+100);
+  /* Kollision */
+  if(invuln<=0)for(const o of obstacles){
+    if(o.lane===lane&&Math.abs(o.y-(h-90))<70){fuel-=20;invuln=1.4;o.y=h+200}
+  }
+  if(km-lastQuizKm>=350&&km<TOTAL-60){state="quiz";showQuiz()}
+  if(fuel<=0){fuel=0;gameOver(false)}
+  if(km>=TOTAL)gameOver(true);
+  hud();draw();
+}
+requestAnimationFrame(loop);
+
+function switchLane(dir){if(state==="drive")lane=Math.max(0,Math.min(2,lane+dir))}
+cv.parentElement.addEventListener("pointerdown",ev=>{
+  if(state!=="drive")return;
+  const mid=cv.getBoundingClientRect().left+cv.getBoundingClientRect().width/2;
+  switchLane(ev.clientX<mid?-1:1);
+});
+window.addEventListener("keydown",ev=>{
+  if(ev.key==="ArrowLeft")switchLane(-1);
+  if(ev.key==="ArrowRight")switchLane(1);
+});
+
+function showMenu(){
+  state="menu";overlay.style.display="flex";
+  overlay.innerHTML=`<h2>Diesel al Sur</h2>
+    <p>Hannover → Valencia. ${TOTAL} km im 200D.<br>
+    Ausweichen kostet Nerven, Rempler kosten Diesel.<br>
+    Alle 350 km Tankstopp: richtige Vokabel = voller Tank,<br>falsche = nur ein Kanister.</p>
+    ${best?`<p>Rekord: ${best} km</p>`:""}
+    <button class="go" id="start">Zündung an</button>`;
+  document.getElementById("start").addEventListener("click",startGame);
+}
+function startGame(){
+  km=0;fuel=100;lane=1;obstacles=[];lastQuizKm=0;invuln=0;
+  overlay.style.display="none";state="drive";hud();
+}
+function showQuiz(){
+  lastQuizKm=km;
+  const[es,de]=VOCAB[Math.floor(Math.random()*VOCAB.length)];
+  const wrong=VOCAB.filter(v=>v[1]!==de).sort(()=>Math.random()-.5).slice(0,3).map(v=>v[1]);
+  const opts=[de,...wrong].sort(()=>Math.random()-.5);
+  overlay.style.display="flex";
+  overlay.innerHTML=`<h2>⛽ Tankstopp</h2>
+    <p>km ${Math.floor(km)} · Was heißt …</p>
+    <p class="es">„${es}"?</p>
+    <div class="opts">${opts.map(o=>`<button data-o="${o}">${o}</button>`).join("")}</div>`;
+  overlay.querySelectorAll("[data-o]").forEach(b=>b.addEventListener("click",()=>{
+    const ok=b.dataset.o===de;
+    b.classList.add(ok?"ok":"no");
+    if(!ok)overlay.querySelectorAll("[data-o]").forEach(x=>{if(x.dataset.o===de)x.classList.add("ok")});
+    fuel=ok?100:Math.min(100,fuel+25);
+    setTimeout(()=>{overlay.style.display="none";state="drive"},900);
+  },{once:true}));
+}
+function gameOver(won){
+  state=won?"won":"over";
+  const d=Math.floor(km);
+  if(d>best){best=d;try{localStorage.setItem(KEY,String(best))}catch(e){}}
+  document.getElementById("h-best").textContent=best+" km";
+  overlay.style.display="flex";
+  overlay.innerHTML=won
+    ?`<h2>¡Bienvenido a Valencia! 🍊</h2><p>${TOTAL} km. Der alte Diesel hat's nach Süden geschafft.</p>
+      <button class="go" id="again">Nochmal fahren</button>`
+    :`<h2>Tank leer.</h2><p>Bei km ${d} liegengeblieben – kurz vor ${seg().split(" → ").pop()}.<br>Rekord: ${best} km</p>
+      <button class="go" id="again">Neuer Versuch</button>`;
+  document.getElementById("again").addEventListener("click",startGame);
+}
+
+showMenu();hud();
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
